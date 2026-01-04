@@ -126,21 +126,7 @@ export async function uploadFile(file, fileName, options = {}) {
   }
 }
 
-/**
- * Generate file access URL
- */
-export async function getFileUrl(fileName, expirySeconds = 7 * 24 * 60 * 60) {
-  try {
-    return await minioClient.presignedGetObject(
-      BUCKET_NAME,
-      fileName,
-      expirySeconds
-    );
-  } catch (error) {
-    logger.logError(error, { context: 'getFileUrl from MinIO', fileName });
-    throw error;
-  }
-}
+
 
 /**
  * Delete file
