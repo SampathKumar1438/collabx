@@ -35,7 +35,7 @@ app.set('trust proxy', 1); // Trust first proxy (Cloudflare/Render/Nginx)
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        origin: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         credentials: true
     }
@@ -49,32 +49,18 @@ const morganStream = {
 };
 
 // Middleware
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow images/files from other origins
-}));
-
-const allowedOrigins = [
-    process.env.CLIENT_URL,
-    'https://collabx-9g2d.onrender.com',
-    'http://localhost:5173'
-].filter(Boolean).map(url => url.replace(/\/$/, "")); // Remove trailing slashes
-
+// 1. CORS - MUST BE FIRST
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or local tools)
-        if (!origin) return callback(null, true);
-
-        const normalizedOrigin = origin.replace(/\/$/, "");
-        if (allowedOrigins.includes(normalizedOrigin)) {
-            callback(null, true);
-        } else {
-            logger.warn(`Rejected CORS request from: ${origin}`);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Allow all for debugging
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With']
+}));
+
+// 2. Security & Others
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
 }));
 app.use(compression());
 app.use(morgan('combined', { stream: morganStream }));
