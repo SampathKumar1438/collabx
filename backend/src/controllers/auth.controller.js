@@ -52,13 +52,13 @@ export const register = async (req, res) => {
         }
 
         const { username, email, password } = req.body;
-        // const existingUser = await prisma.user.findUnique({
-        //     where: { email }
-        // });
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
 
-        // if (existingUser) {
-        //     return sendError(res, { error: ERROR_MESSAGES.AUTH.EMAIL_EXISTS, statusCode: 400 });
-        // }
+        if (existingUser) {
+            return sendError(res, { error: ERROR_MESSAGES.AUTH.EMAIL_EXISTS, statusCode: 400 });
+        }
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
