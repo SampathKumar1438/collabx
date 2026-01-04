@@ -49,10 +49,32 @@ const morganStream = {
 };
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow images/files from other origins
+}));
+
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'https://collabx-9g2d.onrender.com',
+    'http://localhost:5173'
+].filter(Boolean).map(url => url.replace(/\/$/, "")); // Remove trailing slashes
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or local tools)
+        if (!origin) return callback(null, true);
+
+        const normalizedOrigin = origin.replace(/\/$/, "");
+        if (allowedOrigins.includes(normalizedOrigin)) {
+            callback(null, true);
+        } else {
+            logger.warn(`Rejected CORS request from: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
 app.use(compression());
 app.use(morgan('combined', { stream: morganStream }));
