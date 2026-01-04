@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Camera, Check } from "@phosphor-icons/react";
+import { formatFileUrl } from "../utils/formatFileUrl";
 import { useAuth } from "../contexts/AuthContext";
 import { filesAPI } from "../services/api";
 import ImageCropperModal from "../components/ImageCropperModal";
@@ -137,7 +138,7 @@ export default function ProfileSetup() {
                   <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-boxdark-2 border-4 border-white dark:border-strokedark shadow-lg ring-2 ring-primary/10">
                     {previewUrl ? (
                       <img
-                        src={previewUrl}
+                        src={formatFileUrl(previewUrl)}
                         alt="Profile preview"
                         className="w-full h-full object-cover"
                       />
