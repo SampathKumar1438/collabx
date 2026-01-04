@@ -1,5 +1,6 @@
 import { Client } from 'minio';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -7,8 +8,8 @@ dotenv.config();
  * MinIO client initialization
  */
 export const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
-  port: Number(process.env.MINIO_PORT ?? 9000),
+  endPoint: process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT || 'localhost',
+  port: process.env.MINIO_EXTERNAL_ENDPOINT ? undefined : Number(process.env.MINIO_PORT ?? 9000),
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
   secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
@@ -51,12 +52,12 @@ export async function initializeMinIO() {
         JSON.stringify(policy)
       );
 
-      console.log(`MinIO bucket "${BUCKET_NAME}" created`);
+      logger.info(`MinIO bucket "${BUCKET_NAME}" created`);
     } else {
-      console.log(`MinIO bucket "${BUCKET_NAME}" already exists`);
+      logger.info(`MinIO bucket "${BUCKET_NAME}" already exists`);
     }
   } catch (error) {
-    console.error('MinIO initialization failed:', error);
+    logger.logError(error, { context: 'MinIO initialization' });
     throw error;
   }
 }
@@ -94,7 +95,7 @@ export async function uploadFile(file, fileName, options = {}) {
       mimeType: file.mimetype,
     };
   } catch (error) {
-    console.error('Error uploading file to MinIO:', error);
+    logger.logError(error, { context: 'uploadFile to MinIO', fileName });
     throw error;
   }
 }
@@ -110,7 +111,7 @@ export async function getFileUrl(fileName, expirySeconds = 7 * 24 * 60 * 60) {
       expirySeconds
     );
   } catch (error) {
-    console.error('Error generating file URL:', error);
+    logger.logError(error, { context: 'getFileUrl from MinIO', fileName });
     throw error;
   }
 }
@@ -123,7 +124,7 @@ export async function deleteFile(fileName) {
     await minioClient.removeObject(BUCKET_NAME, fileName);
     return true;
   } catch (error) {
-    console.error('Error deleting file:', error);
+    logger.logError(error, { context: 'deleteFile from MinIO', fileName });
     throw error;
   }
 }
@@ -142,7 +143,7 @@ export async function getFileInfo(fileName) {
       metaData: stat.metaData,
     };
   } catch (error) {
-    console.error('Error getting file info:', error);
+    logger.logError(error, { context: 'getFileInfo from MinIO', fileName });
     throw error;
   }
 }
