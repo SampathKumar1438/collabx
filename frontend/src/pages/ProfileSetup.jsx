@@ -106,8 +106,8 @@ export default function ProfileSetup() {
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-white to-purple-50 dark:from-boxdark dark:via-boxdark dark:to-boxdark-2 p-4">
-        <div className="w-full max-w-md">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-white to-purple-50 dark:from-boxdark dark:via-boxdark dark:to-boxdark-2 p-4 overflow-y-auto">
+        <div className="w-full max-w-md my-8">
           <div className="bg-white dark:bg-boxdark rounded-2xl shadow-xl p-8 border border-stroke dark:border-strokedark">
             {/* Header */}
             <div className="text-center mb-8">

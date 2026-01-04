@@ -34,8 +34,10 @@ const USER_SELECT = {
 // Cookie options helper
 const getCookieOptions = (maxAge) => ({
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' is required for cross-domain cookies
+    // In this specific POC setup on EC2 without SSL, we MUST disable 'secure' cookies
+    // otherwise the browser drops them.
+    secure: false, // Force false for HTTP-only deployment
+    sameSite: 'lax', // 'lax' is best for standard first-party cookies, 'none' requires secure: true
     maxAge
 });
 

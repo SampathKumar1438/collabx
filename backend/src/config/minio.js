@@ -24,11 +24,19 @@ export const getFileUrl = async (objectName) => {
   // Format: https://external-domain.com/<bucket>/<filename>
   if (process.env.MINIO_EXTERNAL_ENDPOINT) {
     const bucket = process.env.MINIO_BUCKET || 'collabx';
-    const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-    // Check if external endpoint already has protocol
-    const baseUrl = process.env.MINIO_EXTERNAL_ENDPOINT.startsWith('http')
-      ? process.env.MINIO_EXTERNAL_ENDPOINT
-      : `https://${process.env.MINIO_EXTERNAL_ENDPOINT}`;
+    // Ensure we don't duplicate protocol if present
+    let baseUrl = process.env.MINIO_EXTERNAL_ENDPOINT;
+
+    // If no protocol specified, default to http (for IP addresses) or https if SSL enabled
+    if (!baseUrl.startsWith('http')) {
+      const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+      baseUrl = `${protocol}://${baseUrl}`;
+    }
+
+    // Remove trailing slash if present
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
 
     return `${baseUrl}/${bucket}/${objectName}`;
   }
