@@ -6,14 +6,40 @@ dotenv.config();
 
 /**
  * MinIO client initialization
+ * ALWAYS connect to localhost internally to avoid Ngrok warning pages/latency
  */
 export const minioClient = new Client({
-  endPoint: process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT || 'localhost',
-  port: process.env.MINIO_EXTERNAL_ENDPOINT ? undefined : Number(process.env.MINIO_PORT ?? 9000),
+  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
+  port: Number(process.env.MINIO_PORT ?? 9000),
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
   secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
 });
+
+/**
+ * Generate a file URL (Presigned or Proxy)
+ */
+export const getFileUrl = async (objectName) => {
+  // If we have a proxy route set up in index.js, we return that URL
+  // Format: https://external-domain.com/<bucket>/<filename>
+  if (process.env.MINIO_EXTERNAL_ENDPOINT) {
+    const bucket = process.env.MINIO_BUCKET || 'collabx';
+    const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+    // Check if external endpoint already has protocol
+    const baseUrl = process.env.MINIO_EXTERNAL_ENDPOINT.startsWith('http')
+      ? process.env.MINIO_EXTERNAL_ENDPOINT
+      : `https://${process.env.MINIO_EXTERNAL_ENDPOINT}`;
+
+    return `${baseUrl}/${bucket}/${objectName}`;
+  }
+
+  // Fallback for local development
+  return await minioClient.presignedGetObject(
+    process.env.MINIO_BUCKET || 'collabx',
+    objectName,
+    24 * 60 * 60 // 1 day expiry
+  );
+};
 
 export const BUCKET_NAME = process.env.MINIO_BUCKET;
 
