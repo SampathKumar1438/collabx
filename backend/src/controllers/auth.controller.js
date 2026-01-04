@@ -56,32 +56,48 @@ export const register = async (req, res) => {
             where: { email }
         });
 
-        if (existingUser) {
-            return sendError(res, { error: ERROR_MESSAGES.AUTH.EMAIL_EXISTS, statusCode: 400 });
-        }
-
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
         // Generate 6-digit OTP
         const otp = generateOTP();
-        // Hash OTP for security (even though it's short, it's good practice, or we can store plain if we want easier debugging/admin view, but hash is safer)
         const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-        const user = await prisma.user.create({
-            data: {
-                username,
-                email,
-                passwordHash,
-                isOnline: false,
-                emailVerified: false,
-                emailVerificationToken: otpHash, // Storing hashed OTP in the token field
-                emailVerificationExpires: expires,
-                lastActiveAt: new Date()
-            },
-            select: USER_SELECT
-        });
+        let user;
+
+        if (existingUser) {
+            if (existingUser.emailVerified) {
+                return sendError(res, { error: ERROR_MESSAGES.AUTH.EMAIL_EXISTS, statusCode: 400 });
+            } else {
+                // User exists but is not verified -> Overwrite details and resend OTP
+                user = await prisma.user.update({
+                    where: { email },
+                    data: {
+                        username,
+                        passwordHash,
+                        emailVerificationToken: otpHash,
+                        emailVerificationExpires: expires,
+                    },
+                    select: USER_SELECT
+                });
+            }
+        } else {
+            // Create new user
+            user = await prisma.user.create({
+                data: {
+                    username,
+                    email,
+                    passwordHash,
+                    isOnline: false,
+                    emailVerified: false,
+                    emailVerificationToken: otpHash,
+                    emailVerificationExpires: expires,
+                    lastActiveAt: new Date()
+                },
+                select: USER_SELECT
+            });
+        }
 
         // Send verification email with OTP
         try {
@@ -119,6 +135,10 @@ export const login = async (req, res) => {
 
         if (!user) {
             return sendUnauthorized(res, ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS);
+        }
+
+        if (!user.emailVerified) {
+            return sendError(res, { error: "Please verify your email address before logging in.", statusCode: 403 });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);

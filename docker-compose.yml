@@ -54,9 +54,11 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-collabx}
-      # JWT Secrets should be set in .env on the server
-      JWT_SECRET: ${JWT_SECRET:-supersecretkey}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshkey}
+      # JWT Configuration
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      ACCESS_TOKEN_EXPIRES_IN: ${ACCESS_TOKEN_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
 
       # Email Configuration
       SMTP_HOST: ${SMTP_HOST}
