@@ -112,6 +112,35 @@ app.use((req, res) => {
 // Setup Socket.IO handlers
 setupSocketHandlers(io);
 
+// MINIO ACCESS PROXY (For Ngrok/Zero-Trust setups)
+// This allows serving MinIO files via the same port as the backend (5000)
+// URL format: https://your-domain.ngrok.app/<bucket_name>/<file_path>
+const bucketName = process.env.MINIO_BUCKET || 'collabx';
+app.get(`/${bucketName}/*`, async (req, res) => {
+    try {
+        const objectName = req.params[0]; // Captures everything after bucket name
+        const { minioClient } = await import('./config/minio.js');
+
+        // Check if object exists (stat)
+        try {
+            const stat = await minioClient.statObject(bucketName, objectName);
+            res.setHeader('Content-Type', stat.metaData['content-type'] || 'application/octet-stream');
+            res.setHeader('Content-Length', stat.size);
+
+            const dataStream = await minioClient.getObject(bucketName, objectName);
+            dataStream.pipe(res);
+        } catch (err) {
+            if (err.code === 'NotFound') {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            throw err;
+        }
+    } catch (error) {
+        logger.error(`Proxy error for ${req.originalUrl}`, error);
+        res.status(500).json({ error: 'Failed to retrieve file' });
+    }
+});
+
 // Initialize services and start server
 const PORT = process.env.PORT || 5000;
 
