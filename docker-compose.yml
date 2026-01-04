@@ -57,6 +57,17 @@ services:
       # JWT Secrets should be set in .env on the server
       JWT_SECRET: ${JWT_SECRET:-supersecretkey}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshkey}
+
+      # Email Configuration
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+
+      # App Configuration
+      APP_NAME: ${APP_NAME:-CollabX}
+      CLIENT_URL: ${CLIENT_URL:-http://13.233.116.130}
     ports:
       - "5000:5000"
     networks:
@@ -68,7 +79,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
+        - VITE_API_URL=${VITE_API_URL:-http://13.233.116.130:5000/api}
     container_name: collabx_frontend
     restart: always
     ports:
