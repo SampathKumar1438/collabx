@@ -50,18 +50,32 @@ const morganStream = {
 
 // Middleware
 // 1. CORS - MUST BE FIRST
+const allowedOrigins = [
+    "https://collabx-9g2d.onrender.com",
+    "http://localhost:5173"
+];
+
 app.use(cors({
-    origin: true, // Allow all for debugging
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true); // server-to-server
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 
 // 2. Security & Others
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false
 }));
+
 app.use(compression());
 app.use(morgan('combined', { stream: morganStream }));
 app.use(cookieParser());
@@ -87,6 +101,39 @@ app.use('/api/conversations', chatRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
 
+// MINIO ACCESS PROXY (For Ngrok/Zero-Trust setups)
+// This allows serving MinIO files via the same port as the backend (5000)
+// URL format: https://your-domain.ngrok.app/<bucket_name>/<file_path>
+const bucketName = process.env.MINIO_BUCKET || 'collabx';
+app.get(`/${bucketName}/*`, async (req, res) => {
+    try {
+        const objectName = req.params[0]; // Captures everything after bucket name
+        const { minioClient } = await import('./config/minio.js');
+
+        // Check if object exists (stat)
+        try {
+            const stat = await minioClient.statObject(bucketName, objectName);
+            res.setHeader('Content-Type', stat.metaData['content-type'] || 'application/octet-stream');
+            res.setHeader('Content-Length', stat.size);
+            res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+            res.setHeader("Access-Control-Allow-Credentials", "true");
+            res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+            res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+            const dataStream = await minioClient.getObject(bucketName, objectName);
+            dataStream.pipe(res);
+        } catch (err) {
+            if (err.code === 'NotFound') {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            throw err;
+        }
+    } catch (error) {
+        logger.error(`Proxy error for ${req.originalUrl}`, error);
+        res.status(500).json({ error: 'Failed to retrieve file' });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     logger.logError(err, {
@@ -111,35 +158,6 @@ app.use((req, res) => {
 
 // Setup Socket.IO handlers
 setupSocketHandlers(io);
-
-// MINIO ACCESS PROXY (For Ngrok/Zero-Trust setups)
-// This allows serving MinIO files via the same port as the backend (5000)
-// URL format: https://your-domain.ngrok.app/<bucket_name>/<file_path>
-const bucketName = process.env.MINIO_BUCKET || 'collabx';
-app.get(`/${bucketName}/*`, async (req, res) => {
-    try {
-        const objectName = req.params[0]; // Captures everything after bucket name
-        const { minioClient } = await import('./config/minio.js');
-
-        // Check if object exists (stat)
-        try {
-            const stat = await minioClient.statObject(bucketName, objectName);
-            res.setHeader('Content-Type', stat.metaData['content-type'] || 'application/octet-stream');
-            res.setHeader('Content-Length', stat.size);
-
-            const dataStream = await minioClient.getObject(bucketName, objectName);
-            dataStream.pipe(res);
-        } catch (err) {
-            if (err.code === 'NotFound') {
-                return res.status(404).json({ error: 'File not found' });
-            }
-            throw err;
-        }
-    } catch (error) {
-        logger.error(`Proxy error for ${req.originalUrl}`, error);
-        res.status(500).json({ error: 'Failed to retrieve file' });
-    }
-});
 
 // Initialize services and start server
 const PORT = process.env.PORT || 5000;
