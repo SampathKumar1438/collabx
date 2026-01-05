@@ -813,7 +813,10 @@ export default function GroupInbox({ groupData, onBack }) {
     setGroupInfoOpen(false);
 
     // 1. Check if it's already in the list
-    if (messageListRef.current) {
+    if (
+      messageListRef.current &&
+      typeof messageListRef.current.scrollToMessageId === "function"
+    ) {
       const found = messageListRef.current.scrollToMessageId(messageId);
       if (found) {
         console.log("[Navigation] Found immediately");
@@ -824,7 +827,6 @@ export default function GroupInbox({ groupData, onBack }) {
     // 2. If not found, load more until we find it or reach the end
     let currentHasMore = hasMore;
     let attempts = 0;
-    let lastLength = messages.length;
 
     console.log("[Navigation] Not in current view, loading history...");
 
@@ -832,14 +834,19 @@ export default function GroupInbox({ groupData, onBack }) {
       const response = await loadMoreMessages();
       attempts++;
 
+      // Check response to see if more messages were loaded
+      const loadedCount = response?.data?.length || 0;
+      console.log(
+        `[Navigation] Batch ${attempts} loaded. New messages in batch: ${loadedCount}`
+      );
+
       // Wait for React state & Virtuoso update
       await new Promise((resolve) => setTimeout(resolve, 600));
 
-      console.log(
-        `[Navigation] Batch ${attempts} loaded. Current messages: ${messages.length}`
-      );
-
-      if (messageListRef.current) {
+      if (
+        messageListRef.current &&
+        typeof messageListRef.current.scrollToMessageId === "function"
+      ) {
         const found = messageListRef.current.scrollToMessageId(messageId);
         if (found) {
           console.log("[Navigation] Found after loading batch", attempts);
@@ -847,14 +854,13 @@ export default function GroupInbox({ groupData, onBack }) {
         }
       }
 
-      // Safeguard: if length didn't change and we thought we had more, stop
-      if (messages.length === lastLength) {
-        console.log("[Navigation] No new messages received, stopping search.");
+      // Check if we got fewer messages than expected (end of history)
+      if (loadedCount === 0 || loadedCount < messagesPerPage) {
+        console.log("[Navigation] Reached end of message history.");
         break;
       }
-      lastLength = messages.length;
-      currentHasMore =
-        response?.success && response.data?.length === messagesPerPage;
+
+      currentHasMore = response?.success && loadedCount === messagesPerPage;
     }
 
     console.log("[Navigation] Message not found after searching history.");

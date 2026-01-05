@@ -176,7 +176,7 @@ async function startServer() {
 
         // Initialize MinIO
         await initializeMinIO();
-        logger.info('MinIO initialized successfully');
+        logger.info(`MinIO initialized successfully ${process.env.MINIO_EXTERNAL_ENDPOINT}`);
 
         // Start server
         server.listen(PORT, '0.0.0.0', () => {

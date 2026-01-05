@@ -223,7 +223,7 @@ export const conversationsAPI = {
 
 // Files API
 export const filesAPI = {
-    upload: async (file, folder = 'messages', onProgress = null) => {
+    upload: async (file, folder = 'uploads', onProgress = null) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', folder);
@@ -242,12 +242,12 @@ export const filesAPI = {
         return response.data;
     },
 
-    getUrl: async (fileName, folder = 'messages') => {
+    getUrl: async (fileName, folder = 'uploads') => {
         const response = await api.get(`/files/${fileName}?folder=${folder}`);
         return response.data;
     },
 
-    delete: async (fileName, folder = 'messages') => {
+    delete: async (fileName, folder = 'uploads') => {
         const response = await api.delete(`/files/${fileName}?folder=${folder}`);
         return response.data;
     },

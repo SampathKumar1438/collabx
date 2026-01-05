@@ -53,15 +53,19 @@ export default function ChatHeader({
     }
   }, [isSearchOpen]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - use click instead of mousedown
+  // to ensure the dropdown item's onClick fires first
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(e.target)
-      ) {
-        setShowResults(false);
-      }
+      // Small delay to allow onClick to fire first
+      setTimeout(() => {
+        if (
+          searchContainerRef.current &&
+          !searchContainerRef.current.contains(e.target)
+        ) {
+          setShowResults(false);
+        }
+      }, 0);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -291,7 +295,10 @@ export default function ChatHeader({
               {searchResults.slice(0, 10).map((msg, index) => (
                 <div
                   key={msg.id}
-                  onClick={() => {
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("[Search] Clicked result:", msg.id);
                     goToResult(index);
                     setShowResults(false);
                   }}

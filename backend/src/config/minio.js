@@ -1,6 +1,7 @@
 import { Client } from 'minio';
 import dotenv from 'dotenv';
 import logger from '../utils/logger.js';
+import { log } from 'node:console';
 
 dotenv.config();
 
@@ -66,30 +67,38 @@ export async function initializeMinIO() {
       }
     }
 
+    // Define bucket policy with all required folders
+    const policy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [
+            `arn:aws:s3:::${BUCKET_NAME}/public/*`,
+            `arn:aws:s3:::${BUCKET_NAME}/uploads/*`,
+            `arn:aws:s3:::${BUCKET_NAME}/messages/*`,
+            `arn:aws:s3:::${BUCKET_NAME}/groups/*`,
+            `arn:aws:s3:::${BUCKET_NAME}/profiles/*`
+          ],
+        },
+      ],
+    };
+
     if (!exists) {
       await minioClient.makeBucket(BUCKET_NAME, 'us-east-1');
-
-      const policy = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Allow',
-            Principal: { AWS: ['*'] },
-            Action: ['s3:GetObject'],
-            Resource: [`arn:aws:s3:::${BUCKET_NAME}/public/*`],
-          },
-        ],
-      };
-
-      await minioClient.setBucketPolicy(
-        BUCKET_NAME,
-        JSON.stringify(policy)
-      );
-
       logger.info(`MinIO bucket "${BUCKET_NAME}" created`);
     } else {
       logger.info(`MinIO bucket "${BUCKET_NAME}" already exists`);
     }
+
+    // Always set/update bucket policy to ensure all folders are accessible
+    await minioClient.setBucketPolicy(
+      BUCKET_NAME,
+      JSON.stringify(policy)
+    );
+    logger.info(`MinIO bucket policy updated for "${BUCKET_NAME}"`);
   } catch (error) {
     logger.logError(error, { context: 'MinIO initialization' });
     throw error;
@@ -100,6 +109,7 @@ export async function initializeMinIO() {
  * Upload file to MinIO
  */
 export async function uploadFile(file, fileName, options = {}) {
+  logger.info(`Preparing to upload file to MinIO: ${fileName}`);
   const { isPublic = false, folder = '' } = options;
 
   const basePath = isPublic ? 'public' : '';
@@ -111,6 +121,7 @@ export async function uploadFile(file, fileName, options = {}) {
     'Content-Type': file.mimetype,
     'X-Upload-Date': new Date().toISOString(),
   };
+  logger.info(`Uploading file to MinIO: ${objectName}`);
 
   try {
     await minioClient.putObject(
@@ -120,6 +131,7 @@ export async function uploadFile(file, fileName, options = {}) {
       file.size,
       metaData
     );
+    logger.info(`File uploaded to MinIO: ${objectName}`);
 
     return {
       bucket: BUCKET_NAME,

@@ -22,6 +22,7 @@ export const uploadFile = async (req, res) => {
         // Generate unique filename
         const fileExtension = path.extname(file.originalname);
         const fileName = `${uuidv4()}${fileExtension}`;
+        logger.info(`Uploading file: ${fileName} to folder: ${folder}`);
 
         // Upload to MinIO
         const uploadResult = await uploadToMinIO(file, fileName, { folder });

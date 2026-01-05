@@ -5,7 +5,6 @@ import {
   Microphone,
   File as FileIcon,
   X,
-  Eye,
   Gif,
   StopCircle,
   PencilSimple,
@@ -35,7 +34,6 @@ export default function ChatInput({
   const [files, setFiles] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -239,7 +237,6 @@ export default function ChatInput({
 
   const removeFile = (index) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
-    if (files.length <= 1) setPreviewOpen(false);
   };
 
   const handleEmojiSelect = (emoji) => {
@@ -380,26 +377,101 @@ export default function ChatInput({
         </div>
       )}
 
-      {/* Selected Files Preview Area (Small chips above input) */}
-      {files.length > 0 && !previewOpen && (
-        <div className="flex gap-2 mb-2 overflow-x-auto py-2">
-          {files.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-2 bg-gray-100 dark:bg-boxdark-2 border border-stroke dark:border-strokedark rounded-md px-2 py-1 min-w-fit"
+      {/* Selected Files Preview Area - Visual Preview */}
+      {files.length > 0 && (
+        <div className="mb-3 p-3 bg-white/10 dark:bg-black/20 rounded-xl border border-stroke/20 dark:border-strokedark/20 backdrop-blur-sm animate-fade-in">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+              {files.length} file{files.length > 1 ? "s" : ""} selected
+            </span>
+            <button
+              onClick={() => setFiles([])}
+              className="text-xs text-danger hover:underline"
             >
-              <FileIcon size={16} className="text-body dark:text-white" />
-              <span className="text-xs truncate max-w-[100px] text-body dark:text-white">
-                {file.name}
-              </span>
-              <button
-                onClick={() => removeFile(index)}
-                className="hover:text-danger"
-              >
-                <X size={12} weight="bold" />
-              </button>
-            </div>
-          ))}
+              Clear all
+            </button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            {files.map((file, index) => (
+              <div key={index} className="relative flex-shrink-0 group">
+                {/* Preview Container */}
+                <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-boxdark-2 border border-stroke/30 dark:border-strokedark/30 flex items-center justify-center">
+                  {file.type.startsWith("image/") ? (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : file.type.startsWith("video/") ? (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={URL.createObjectURL(file)}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 text-gray-800 ml-0.5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ) : file.type.startsWith("audio/") ? (
+                    <div className="flex flex-col items-center justify-center text-primary">
+                      <Microphone size={28} weight="duotone" />
+                      <span className="text-[8px] mt-1 text-gray-500">
+                        Audio
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-primary">
+                      <FileIcon size={28} weight="duotone" />
+                      <span className="text-[8px] mt-1 text-gray-500 uppercase">
+                        {file.name.split(".").pop()?.slice(0, 4)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Remove button */}
+                <button
+                  onClick={() => removeFile(index)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-danger text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:scale-110"
+                >
+                  <X size={12} weight="bold" />
+                </button>
+
+                {/* File info tooltip */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1 rounded-b-lg">
+                  <p className="text-[9px] text-white truncate text-center">
+                    {file.name.length > 12
+                      ? file.name.slice(0, 10) + "..."
+                      : file.name}
+                  </p>
+                </div>
+
+                {/* File size badge */}
+                <div className="absolute top-1 left-1 bg-black/60 text-white text-[8px] px-1 py-0.5 rounded">
+                  {file.size < 1024 * 1024
+                    ? `${(file.size / 1024).toFixed(0)}KB`
+                    : `${(file.size / (1024 * 1024)).toFixed(1)}MB`}
+                </div>
+              </div>
+            ))}
+
+            {/* Add more files button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-20 h-20 flex-shrink-0 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary dark:hover:border-primary flex flex-col items-center justify-center gap-1 transition-colors text-gray-400 hover:text-primary"
+            >
+              <FileArrowUp size={24} />
+              <span className="text-[9px]">Add more</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -505,20 +577,6 @@ export default function ChatInput({
                 }`}
               />
               <div className="absolute right-2 md:right-5 top-1/2 -translate-y-1/2 items-center justify-end space-x-1 md:space-x-2 flex">
-                {files.length > 0 && (
-                  <button
-                    type="button"
-                    className={`hover:text-primary transition-colors ${
-                      previewOpen
-                        ? "text-primary"
-                        : "text-gray-500 dark:text-white"
-                    }`}
-                    onClick={() => setPreviewOpen(!previewOpen)}
-                    aria-label="Preview files"
-                  >
-                    <Eye size={20} />
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={startRecording}
@@ -618,71 +676,6 @@ export default function ChatInput({
       )}
 
       {gifOpen && <Giphy onSelect={handleGifSelect} />}
-
-      {/* File Preview Modal */}
-      {previewOpen && files.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-white/10 dark:bg-black/20 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col backdrop-blur-2xl border border-stroke/10 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-black dark:text-white">
-                Selected Files ({files.length})
-              </h3>
-              <button
-                onClick={() => setPreviewOpen(false)}
-                className="hover:text-danger"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="overflow-y-auto flex-1 space-y-2 p-2">
-              {files.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between bg-white/5 dark:bg-black/10 p-3 rounded-lg border border-stroke/10"
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="bg-primary/10 p-2 rounded-lg">
-                      {file.type.startsWith("image/") ? (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="preview"
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                      ) : (
-                        <FileIcon size={24} className="text-primary" />
-                      )}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <p className="text-sm font-medium text-black dark:text-white truncate">
-                        {file.name}
-                      </p>
-                      <p className="text-xs text-body dark:text-bodydark">
-                        {(file.size / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="text-danger hover:bg-danger/10 p-1.5 rounded-full transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setPreviewOpen(false);
-                }}
-                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

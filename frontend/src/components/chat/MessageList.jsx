@@ -162,72 +162,94 @@ const MessageList = forwardRef(
 
     useImperativeHandle(
       ref,
-      () => (
-        {
-          scrollToMessageId: (messageId) => {
-            console.log("MessageList: scrollToMessageId", messageId);
-            const index = messagesWithDates.findIndex(
-              (m) => String(m.id) === String(messageId)
-            );
+      () => ({
+        scrollToMessageId: (messageId) => {
+          console.log("MessageList: scrollToMessageId", messageId);
 
-            if (index !== -1) {
-              const absoluteIndex = index + (firstItemIndex || 0);
+          const index = messagesWithDates.findIndex(
+            (m) => String(m.id) === String(messageId)
+          );
+
+          if (index !== -1) {
+            console.log("MessageList: found at data index", index);
+
+            // Use Virtuoso's scrollToIndex with the data index
+            // Note: Virtuoso uses index relative to the data array when using firstItemIndex
+            virtuosoRef.current?.scrollToIndex({
+              index: index,
+              align: "center",
+              behavior: "smooth",
+            });
+
+            // Wait for Virtuoso to render, then highlight
+            const highlightElement = () => {
+              const element = document.getElementById(`message-${messageId}`);
               console.log(
-                "MessageList: found index",
-                index,
-                "absoluteIndex",
-                absoluteIndex
+                "MessageList: Looking for element",
+                `message-${messageId}`,
+                "found:",
+                !!element
               );
 
-              // 1. Precise scroll using Virtuoso index
-              virtuosoRef.current?.scrollToIndex({
-                index: absoluteIndex,
-                align: "center",
-                behavior: "auto",
-              });
-
-              // 2. Recursive highlight once element exists in DOM
-              const start = Date.now();
-              const highlightIfReady = () => {
-                const element = document.getElementById(`message-${messageId}`);
-                if (element) {
-                  console.log("MessageList: element found, highlighting");
-                  element.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                  element.classList.add(
+              if (element) {
+                console.log("MessageList: element found, highlighting");
+                // Scroll into view as backup
+                element.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+                // Add highlight classes
+                element.classList.add(
+                  "ring-offset-2",
+                  "ring-4",
+                  "ring-primary",
+                  "bg-primary/20",
+                  "transition-all",
+                  "duration-500"
+                );
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                  element.classList.remove(
                     "ring-offset-2",
                     "ring-4",
                     "ring-primary",
-                    "bg-primary/20",
-                    "transition-all",
-                    "duration-500"
+                    "bg-primary/20"
                   );
-                  setTimeout(() => {
-                    element.classList.remove(
-                      "ring-offset-2",
-                      "ring-4",
-                      "ring-primary",
-                      "bg-primary/20"
-                    );
-                  }, 3000);
-                } else if (Date.now() - start < 2000) {
-                  // Try for up to 2 seconds
-                  requestAnimationFrame(highlightIfReady);
-                }
-              };
+                }, 3000);
+                return true;
+              }
+              return false;
+            };
 
-              // Try highlighting with a slight delay to allow rendering
-              setTimeout(highlightIfReady, 100);
-              return true;
-            }
-            console.log("MessageList: messageId not found in current messages");
-            return false;
-          },
+            // Try multiple times with increasing delays
+            const attempts = [100, 300, 500, 1000, 1500];
+            let attemptIndex = 0;
+
+            const tryHighlight = () => {
+              if (highlightElement()) {
+                return; // Success
+              }
+              attemptIndex++;
+              if (attemptIndex < attempts.length) {
+                setTimeout(
+                  tryHighlight,
+                  attempts[attemptIndex] - (attempts[attemptIndex - 1] || 0)
+                );
+              } else {
+                console.log(
+                  "MessageList: Could not find element after all attempts"
+                );
+              }
+            };
+
+            setTimeout(tryHighlight, attempts[0]);
+            return true;
+          }
+          console.log("MessageList: messageId not found in current messages");
+          return false;
         },
-        [messagesWithDates, firstItemIndex]
-      )
+      }),
+      [messagesWithDates]
     );
 
     return (
@@ -248,7 +270,7 @@ const MessageList = forwardRef(
           }
           followOutput="auto"
           startReached={() => {
-            if (hasMore && !loadingMore) {
+            if (hasMore && !loadingMore && typeof onLoadMore === "function") {
               onLoadMore();
             }
           }}
