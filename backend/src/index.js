@@ -69,6 +69,11 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Explicit OPTIONS preflight handler - responds immediately to preflight requests
+app.options('*', (req, res) => {
+    res.sendStatus(200);
+});
+
 
 // 2. Security & Others
 app.use(helmet({
