@@ -31,13 +31,11 @@ const USER_SELECT = {
     createdAt: true
 };
 
-// Cookie options helper
+// Cookie options helper - use secure cookies in production (HTTPS)
 const getCookieOptions = (maxAge) => ({
     httpOnly: true,
-    // In this specific POC setup on EC2 without SSL, we MUST disable 'secure' cookies
-    // otherwise the browser drops them.
-    secure: false, // Force false for HTTP-only deployment
-    sameSite: 'lax', // 'lax' is best for standard first-party cookies, 'none' requires secure: true
+    secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-site cookies requires secure
     maxAge
 });
 
