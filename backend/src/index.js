@@ -51,7 +51,8 @@ const morganStream = {
 // Middleware
 // 1. CORS - MUST BE FIRST
 const allowedOrigins = [
-    "https://collabx-9g2d.onrender.com",
+    "https://collabx-frontend-e82v.onrender.com",
+    "https://collabx-backend-ls4s.onrender.com",
     "http://localhost:5173"
 ];
 
