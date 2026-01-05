@@ -236,6 +236,21 @@ export const CallProvider = ({ children }) => {
           peerConnections.current.delete("default-1-1");
           peerConnections.current.set(responderSocketId, pc);
 
+          // Remap remote stream if it exists under default key
+          setRemoteStreams((prev) => {
+            const stream = prev.get("default-1-1");
+            if (stream) {
+              console.log(
+                `Remapping default-1-1 stream to ${responderSocketId}`
+              );
+              const newMap = new Map(prev);
+              newMap.delete("default-1-1");
+              newMap.set(responderSocketId, stream);
+              return newMap;
+            }
+            return prev;
+          });
+
           // Also try to ensure participant info is set?
           // We set it when we got 'incoming', but here we are the initiator.
           // Wait, initiator stores 'recipient' in call state.
@@ -247,6 +262,21 @@ export const CallProvider = ({ children }) => {
 
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+        // Flush queued candidates if any (for 1-to-1 initiator)
+        if (pc.queuedCandidates && pc.queuedCandidates.length > 0) {
+          console.log(
+            `Flushing ${pc.queuedCandidates.length} queued candidates to ${responderSocketId}`
+          );
+          pc.queuedCandidates.forEach((candidate) => {
+            socket.emit("call:ice-candidate", {
+              to: responderSocketId,
+              candidate: candidate,
+            });
+          });
+          pc.queuedCandidates = []; // Clear queue
+        }
+
         // If we received an answer, the call is connected
         setCallState("connected");
         stopRinging();
@@ -396,34 +426,61 @@ export const CallProvider = ({ children }) => {
 
       let offer = null;
       if (!isGroup) {
-        // Fake socket for 1-to-1? or just special handling.
-        // Wait, backend needs 'recipientId' to find user.
-        // We don't have socketId yet! 1-to-1 logic relies on "start" carrying offer.
-        // So for 1-to-1 we create a temporary "holding" PC? No, we don't know who to offer TO yet until backend resolves?
-        // Actually current 1-to-1 works by: Start -> Backend -> Incoming. Caller waits for Answer.
-        // BUT standard WebRTC start requires creating offer.
-        // Let's create a PC and offer for 1-to-1.
-        // BUT we don't have socketId of recipient.
-        // Problem: 'peerConnections' map is keyed by socketId.
-        // Solution: For 1-to-1, we can key by 'recipientId' temporarily or handle answer specially.
-        // Lets stick to:
-        // Group: Just emit start.
-        // 1-to-1: Keep legacy logic? Or migrate?
-        // Let's migrate 1-to-1 to also use "wait for join" if possible?
-        // Backend current 1-to-1 "call:incoming" sends offer. So caller must generate it.
-
-        // Temporary PC for 1-to-1 generation
+        // Init 1-to-1 with listeners
+        console.log("Initializing 1-to-1 call initiator...");
         const pc = new RTCPeerConnection(rtcConfig);
+
         // Add tracks
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+        // 1. Queue candidates until we know who to send to (or re-map default)
+        // actually for now we can just store them and emit later,
+        // OR rely on the fact we don't have socketId yet.
+        // We will store them in a temporary queue on the PC itself or a ref?
+        // Let's use a simple array on the component to hold "early candidates for default-1-1"
+        // But better: simply let the 'onicecandidate' fire, and if we don't have a recipient socket ID,
+        // we can't emit.
+        // BUT wait, we need to send them eventually.
+        // Let's attach them to the pc object temporarily?
+        pc.queuedCandidates = [];
+
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            console.log(
+              "Generated ICE candidate (initiator):",
+              event.candidate
+            );
+            // We don't have 'recipientCallSocketId' yet.
+            // We store it.
+            pc.queuedCandidates.push(event.candidate);
+          }
+        };
+
+        pc.ontrack = (event) => {
+          console.log("Received remote track (initiator)");
+          const stream = event.streams[0];
+          // We assume single remote stream for 1-to-1
+          // We can set it in the map using a temporary key or wait?
+          // The map is used for rendering.
+          // Let's set it to 'default-1-1' temporarily so UI can show it?
+          // Or wait for answer? Usually track comes after answer/connection.
+          setRemoteStreams((prev) => new Map(prev).set("default-1-1", stream));
+        };
+
+        pc.onconnectionstatechange = () => {
+          console.log(`Initiator PC state: ${pc.connectionState}`);
+          if (
+            pc.connectionState === "failed" ||
+            pc.connectionState === "closed"
+          ) {
+            // cleanup if needed
+          }
+        };
+
         offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
-        // We can't put it in map yet because we don't know socket Id.
-        // We can store it in a single ref for 1-to-1 fallback?
-        // Or key it by "default"?
         peerConnections.current.set("default-1-1", pc);
-        // When answer comes, it must have 'responderSocketId', we can re-map it?
       }
 
       socket.emit("call:start", {

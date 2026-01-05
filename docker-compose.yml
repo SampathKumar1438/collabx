@@ -71,26 +71,31 @@ services:
       # App Configuration
       APP_NAME: ${APP_NAME:-CollabX}
       CLIENT_URL: ${CLIENT_URL:-http://13.233.116.130}
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     networks:
       - collabx-network
 
-  # Frontend Service (React + Nginx)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://13.233.116.130:5000/api}
-    container_name: collabx_frontend
+  # Caddy Reverse Proxy (Handles HTTPS)
+  caddy:
+    image: caddy:alpine
+    container_name: collabx_caddy
     restart: always
     ports:
       - "80:80"
-    depends_on:
-      - backend
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - EC2_PUBLIC_IP=${EC2_PUBLIC_IP}
     networks:
       - collabx-network
+    depends_on:
+      - backend
+
+  # Frontend is NOT here anymore - deployed to Render
 
 networks:
   collabx-network:
@@ -99,3 +104,5 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  caddy_data:
+  caddy_config:

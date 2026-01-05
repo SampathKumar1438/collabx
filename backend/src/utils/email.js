@@ -1,17 +1,34 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Nodemailer Transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
-// Default from email (must be verified in Resend or use their test domain)
-const FROM_EMAIL = process.env.EMAIL_FROM || 'CollabX <onboarding@resend.dev>';
+// Verify connection configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('SMTP Connection Error:', error);
+  } else {
+    console.log('✅ SMTP Server is ready to take our messages');
+  }
+});
+
+const FROM_EMAIL = process.env.EMAIL_FROM || process.env.SMTP_USER;
+const APP_NAME = process.env.APP_NAME || 'CollabX';
 
 export const sendPasswordResetEmail = async (email, resetToken) => {
   const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await transporter.sendMail({
+      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
       to: email,
       subject: 'Password Reset Request',
       html: `
@@ -44,13 +61,14 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
                 <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
               </div>
               <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} ${process.env.APP_NAME || 'CollabX'}. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
               </div>
             </div>
           </body>
         </html>
       `,
     });
+    console.log(`Password reset email sent to ${email}`);
   } catch (error) {
     console.error(`Error sending password reset email to ${email}:`, error);
     throw error;
@@ -59,8 +77,8 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
 
 export const sendVerificationEmail = async (email, otp) => {
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await transporter.sendMail({
+      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
       to: email,
       subject: 'Verify Your Email Address - OTP',
       html: `
@@ -90,7 +108,7 @@ export const sendVerificationEmail = async (email, otp) => {
           <body>
             <div class="container">
               <div class="header">
-                <h1>Welcome to ${process.env.APP_NAME || 'CollabX'}!</h1>
+                <h1>Welcome to ${APP_NAME}!</h1>
               </div>
               <div class="content">
                 <p>Hello,</p>
@@ -102,7 +120,7 @@ export const sendVerificationEmail = async (email, otp) => {
                 <p>If you didn't create an account, please ignore this email.</p>
               </div>
               <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} ${process.env.APP_NAME || 'CollabX'}. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
               </div>
             </div>
           </body>
@@ -121,8 +139,8 @@ export const sendVerificationEmail = async (email, otp) => {
 
 export const sendPasswordResetOTP = async (email, otp) => {
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    await transporter.sendMail({
+      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
       to: email,
       subject: 'Password Reset OTP',
       html: `
@@ -164,7 +182,7 @@ export const sendPasswordResetOTP = async (email, otp) => {
                 <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
               </div>
               <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} ${process.env.APP_NAME || 'CollabX'}. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
               </div>
             </div>
           </body>
