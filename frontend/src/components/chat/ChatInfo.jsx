@@ -233,17 +233,14 @@ export default function ChatInfo({
 
       {/* Profile Section - Compact Horizontal */}
       <div className="px-4 py-3 border-b border-stroke/10 dark:border-strokedark/20 flex items-start gap-3">
-        {/* Avatar */}
+        {/* Avatar with online indicator */}
         <div className="relative flex-shrink-0">
-          <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-stroke dark:ring-strokedark">
-            <Avatar
-              src={displayData.avatar}
-              alt={displayData.name}
-              size="custom"
-              className="w-full h-full"
-              isOnline={displayData.isOnline}
-            />
-          </div>
+          <Avatar
+            src={displayData.avatar}
+            alt={displayData.name}
+            size="xl"
+            isOnline={displayData.isOnline}
+          />
         </div>
 
         {/* Info */}
@@ -251,13 +248,11 @@ export default function ChatInfo({
           <h3 className="text-xl font-bold text-black dark:text-white truncate">
             {displayData.name}
           </h3>
-          <div className="flex items-center gap-1 mt-0.5">
-            <Circle
-              size={6}
-              weight="fill"
-              className={
-                displayData.isOnline ? "text-success" : "text-gray-400"
-              }
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                displayData.isOnline ? "bg-success" : "bg-gray-400"
+              }`}
             />
             <span className="text-xs text-gray-500 dark:text-white">
               {displayData.isOnline

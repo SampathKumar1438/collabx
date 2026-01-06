@@ -85,14 +85,18 @@ const MessageList = forwardRef(
         const msgDate = msg.createdAt || msg.time;
         const dateKey = getDateKey(msgDate);
 
-        // Insert date separator if date changed
+        // Insert date separator if date changed and label is valid
         if (dateKey && dateKey !== lastDateKey) {
-          result.push({
-            type: "date-separator",
-            id: `date-${dateKey}`,
-            date: msgDate,
-            label: formatDateLabel(msgDate),
-          });
+          const label = formatDateLabel(msgDate);
+          // Only add separator if we have a valid label
+          if (label) {
+            result.push({
+              type: "date-separator",
+              id: `date-${dateKey}`,
+              date: msgDate,
+              label: label,
+            });
+          }
           lastDateKey = dateKey;
         }
 

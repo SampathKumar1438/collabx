@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Camera, Check } from "@phosphor-icons/react";
 import { formatFileUrl } from "../utils/formatFileUrl";
@@ -22,6 +22,13 @@ export default function ProfileSetup() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
+
+  // Pre-fill username from signup data
+  useEffect(() => {
+    if (user?.username && !username) {
+      setUsername(user.username);
+    }
+  }, [user]);
 
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
@@ -107,19 +114,19 @@ export default function ProfileSetup() {
 
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-white to-purple-50 dark:from-boxdark dark:via-boxdark dark:to-boxdark-2 p-4 overflow-y-auto">
-        <div className="w-full max-w-md my-8">
-          <div className="bg-white dark:bg-boxdark rounded-2xl shadow-xl p-8 border border-stroke dark:border-strokedark">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                <User size={32} className="text-primary" weight="duotone" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 via-white to-purple-50 dark:from-boxdark dark:via-boxdark dark:to-boxdark-2 p-4">
+        <div className="w-full max-w-md min-h-fit flex flex-col">
+          <div className="bg-white dark:bg-boxdark rounded-2xl shadow-xl p-6 border border-stroke dark:border-strokedark flex flex-col">
+            {/* Header - Compact */}
+            <div className="text-center mb-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-2">
+                <User size={24} className="text-primary" weight="duotone" />
               </div>
-              <h1 className="text-2xl font-bold text-black dark:text-white mb-2">
+              <h1 className="text-xl font-bold text-black dark:text-white mb-1">
                 Complete Your Profile
               </h1>
-              <p className="text-body dark:text-bodydark text-sm">
-                Just one more step before you can start chatting
+              <p className="text-body dark:text-bodydark text-xs">
+                One more step before you can start chatting
               </p>
             </div>
 
@@ -131,11 +138,11 @@ export default function ProfileSetup() {
               />
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Picture */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* Profile Picture - Compact */}
               <div className="flex flex-col items-center">
                 <div className="relative group">
-                  <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 dark:bg-boxdark-2 border-4 border-white dark:border-strokedark shadow-lg ring-2 ring-primary/10">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-boxdark-2 border-2 border-white dark:border-strokedark shadow-md ring-2 ring-primary/10">
                     {previewUrl ? (
                       <img
                         src={formatFileUrl(previewUrl)}
@@ -145,7 +152,7 @@ export default function ProfileSetup() {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-purple-500/20">
                         <User
-                          size={48}
+                          size={32}
                           className="text-primary"
                           weight="duotone"
                         />
@@ -155,9 +162,9 @@ export default function ProfileSetup() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-opacity-90 transition-all group-hover:scale-110"
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md hover:bg-opacity-90 transition-all group-hover:scale-110"
                   >
-                    <Camera size={20} weight="bold" />
+                    <Camera size={16} weight="bold" />
                   </button>
                   <input
                     ref={fileInputRef}
@@ -167,10 +174,8 @@ export default function ProfileSetup() {
                     className="hidden"
                   />
                 </div>
-                <p className="mt-3 text-xs text-body dark:text-bodydark text-center">
-                  Click camera icon to upload photo (optional)
-                  <br />
-                  Max size: 5MB
+                <p className="mt-2 text-[10px] text-body dark:text-bodydark text-center">
+                  Click camera to upload (optional, max 5MB)
                 </p>
               </div>
 
@@ -186,11 +191,11 @@ export default function ProfileSetup() {
                 helperText="This is how others will see you"
               />
 
-              {/* Bio */}
+              {/* Bio - Smaller */}
               <Input
                 label="Bio (optional)"
                 multiline
-                rows={4}
+                rows={2}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell us about yourself..."
@@ -198,21 +203,23 @@ export default function ProfileSetup() {
                 helperText={`${bio.length}/500`}
               />
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={loading || !username.trim()}
-                loading={loading}
-                fullWidth
-                size="lg"
-                icon={Check}
-              >
-                Complete Setup
-              </Button>
+              {/* Submit Button - Always visible */}
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={loading || !username.trim()}
+                  loading={loading}
+                  fullWidth
+                  size="lg"
+                  icon={Check}
+                >
+                  Complete Setup
+                </Button>
+              </div>
             </form>
 
             {/* Footer */}
-            <p className="mt-6 text-center text-xs text-body dark:text-bodydark">
+            <p className="mt-3 text-center text-[10px] text-body dark:text-bodydark">
               You can update these details anytime from settings
             </p>
           </div>

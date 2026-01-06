@@ -95,8 +95,9 @@ function Inbox({ chatData, onBack }) {
         createdAt: messageData.createdAt, // Keep original timestamp for date grouping
         time: !isNaN(new Date(messageData.createdAt).getTime())
           ? new Date(messageData.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
+              hour: "numeric",
               minute: "2-digit",
+              hour12: true,
             })
           : "",
         isOwn: String(messageData.senderId) === String(currentUserId),
@@ -271,8 +272,9 @@ function Inbox({ chatData, onBack }) {
             createdAt: msg.createdAt, // Keep original timestamp for date grouping
             time: !isNaN(new Date(msg.createdAt).getTime())
               ? new Date(msg.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
+                  hour: "numeric",
                   minute: "2-digit",
+                  hour12: true,
                 })
               : "",
             isOwn,
@@ -281,6 +283,7 @@ function Inbox({ chatData, onBack }) {
             fileUrl: msg.fileUrl,
             metadata: msg.metadata || {},
             replyTo: msg.metadata?.replyTo || null,
+            reactions: msg.metadata?.reactions || [],
             isPinned: msg.isPinned || false,
             isDeleted: msg.isDeleted || false,
           };
@@ -378,8 +381,9 @@ function Inbox({ chatData, onBack }) {
             sender: "You",
             message: response.data.content,
             time: new Date(response.data.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
+              hour: "numeric",
               minute: "2-digit",
+              hour12: true,
             }),
             isOwn: true,
             messageType: "text",
@@ -879,15 +883,31 @@ function Inbox({ chatData, onBack }) {
               onGoToMessage={handleGoToMessage}
               hasMore={hasMore}
               loadingMore={loadingMore}
-              typingIndicator={
-                typingUser ? (
-                  <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                    {typingUser} is typing...
-                  </div>
-                ) : null
-              }
             />
           </>
+        )}
+
+        {/* Typing Indicator - Fixed above input */}
+        {typingUser && (
+          <div className="px-6 py-2 bg-white/50 dark:bg-boxdark/50 backdrop-blur-sm border-t border-stroke/10 dark:border-strokedark/10">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex gap-1">
+                <span
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></span>
+                <span
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></span>
+                <span
+                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></span>
+              </div>
+              <span className="italic">{typingUser} is typing...</span>
+            </div>
+          </div>
         )}
 
         {/* Upload Progress Indicator */}

@@ -400,30 +400,30 @@ function MessageBubble({
                   : undefined
               }
             />
+          </div>
+        )}
 
-            {/* Reaction Picker Popover */}
-            {showReactionPicker && (
-              <div
-                className={`absolute bottom-full mb-2 ${
-                  isOwn ? "left-auto right-0" : "left-0 right-auto"
-                } z-50 bg-white dark:bg-boxdark shadow-lg rounded-lg border border-stroke dark:border-strokedark p-2 animate-fade-in`}
-              >
-                <div className="flex gap-2 items-center">
-                  {["👍", "❤️", "😂", "😮", "😢", "😡"].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => handleEmojiSelect(emoji)}
-                      className="text-xl hover:scale-125 transition-transform"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                  <div className="border-l border-gray pl-2 ml-1">
-                    <EmojiPicker onSelect={handleEmojiSelect} />
-                  </div>
-                </div>
+        {/* Reaction Picker Popover - Moved outside hover container for click accessibility */}
+        {showReactionPicker && (
+          <div
+            className={`absolute bottom-full mb-2 ${
+              isOwn ? "right-0" : "left-0"
+            } z-50 bg-white dark:bg-boxdark shadow-lg rounded-lg border border-stroke dark:border-strokedark p-2 animate-fade-in`}
+          >
+            <div className="flex gap-2 items-center">
+              {["👍", "❤️", "😂", "😮", "😢", "😡"].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleEmojiSelect(emoji)}
+                  className="text-xl hover:scale-125 transition-transform"
+                >
+                  {emoji}
+                </button>
+              ))}
+              <div className="border-l border-gray pl-2 ml-1">
+                <EmojiPicker onSelect={handleEmojiSelect} />
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -515,12 +515,16 @@ function MessageBubble({
               </>
             )}
 
-            {/* Reactions Badge */}
+            {/* Reactions Badge - Now clickable for touch support */}
             {message.reactions && message.reactions.length > 0 && (
               <div
                 className={`absolute -bottom-3 ${
                   isOwn ? "left-0" : "right-0"
-                } bg-white dark:bg-boxdark rounded-full px-1.5 py-0.5 shadow-md border border-stroke dark:border-strokedark flex gap-0.5 text-xs animate-fade-in`}
+                } bg-white dark:bg-boxdark rounded-full px-1.5 py-0.5 shadow-md border border-stroke dark:border-strokedark flex gap-0.5 text-xs animate-fade-in cursor-pointer hover:scale-105 transition-transform`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReactionPicker(!showReactionPicker);
+                }}
               >
                 {message.reactions.map((r, i) => (
                   <span key={i} className="animate-bounce-in">

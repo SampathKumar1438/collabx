@@ -21,6 +21,17 @@ export default function Signup() {
   const navigate = useNavigate();
   const justRegistered = useRef(false);
 
+  // Username validation
+  const usernameValidation = React.useMemo(() => {
+    const minLength = username.length >= 3;
+    const maxLength = username.length <= 30;
+    const validChars = /^[a-zA-Z0-9_]*$/.test(username);
+    const noSpaces = !username.includes(" ");
+    const isValid =
+      minLength && maxLength && validChars && noSpaces && username.length > 0;
+    return { minLength, maxLength, validChars, noSpaces, isValid };
+  }, [username]);
+
   React.useEffect(() => {
     if (isAuthenticated && !justRegistered.current) {
       navigate("/messages", { replace: true });
@@ -172,17 +183,58 @@ export default function Signup() {
             )}
 
             <form className="space-y-5" onSubmit={handleSubmit}>
-              <Input
-                label="Username"
-                type="text"
-                placeholder="Choose a username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                minLength={3}
-                disabled={loading}
-                icon={User}
-              />
+              <div>
+                <Input
+                  label="Username"
+                  type="text"
+                  placeholder="Choose a username"
+                  value={username}
+                  onChange={(e) =>
+                    setUsername(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")
+                    )
+                  }
+                  required
+                  minLength={3}
+                  maxLength={30}
+                  disabled={loading}
+                  icon={User}
+                />
+                {username.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        usernameValidation.minLength
+                          ? "text-green-500"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      <CheckCircle
+                        size={14}
+                        weight={
+                          usernameValidation.minLength ? "fill" : "regular"
+                        }
+                      />
+                      <span>At least 3 characters</span>
+                    </div>
+                    <div
+                      className={`flex items-center gap-2 text-xs ${
+                        usernameValidation.validChars
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      <CheckCircle
+                        size={14}
+                        weight={
+                          usernameValidation.validChars ? "fill" : "regular"
+                        }
+                      />
+                      <span>Only letters, numbers, and underscores</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <Input
                 label="Email Address"

@@ -105,11 +105,11 @@ const Avatar = ({
       {isOnline && (
         <span
           className={`
-            absolute bottom-0 right-0 
+            absolute bottom-0 right-0 translate-x-[2px] translate-y-[2px]
             ${statusSizeClasses[size]} 
             bg-success rounded-full 
-            border-2 border-white dark:border-black/50
-            shadow-sm
+            border-2 border-white dark:border-boxdark
+            shadow-sm z-10
           `}
         />
       )}

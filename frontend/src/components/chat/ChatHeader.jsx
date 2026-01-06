@@ -141,7 +141,11 @@ export default function ChatHeader({
     if (!timeStr) return "";
     const date = new Date(timeStr);
     if (isNaN(date.getTime())) return "";
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
   const getMessagePreview = (msg) => {
@@ -211,12 +215,11 @@ export default function ChatHeader({
               : ""
           }`}
         >
-          <div className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-stroke/20 dark:ring-strokedark/20 flex-shrink-0">
+          <div className="flex-shrink-0">
             <Avatar
               src={chatData.avatar}
               alt={name}
-              size="custom"
-              className="w-full h-full"
+              size="md"
               isOnline={!isGroup && chatData.isOnline}
               isGroup={isGroup}
             />
