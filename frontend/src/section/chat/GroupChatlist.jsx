@@ -55,9 +55,15 @@ function GroupChatlist({ onGroupSelect, selectedGroupId }) {
         updatedGroup.messages = [message, ...updatedGroup.messages]; // Prepend
 
         // Increment unread count if not selected
+        const currentUserId = localStorage.getItem("userId");
+        const isFromSelf =
+          String(message.senderId || message.sender?.userId) ===
+          String(currentUserId);
+
         if (
           selectedGroupId &&
-          updatedGroup.conversationId !== selectedGroupId
+          updatedGroup.conversationId !== selectedGroupId &&
+          !isFromSelf
         ) {
           updatedGroup.unreadCount = (updatedGroup.unreadCount || 0) + 1;
         }
@@ -100,14 +106,33 @@ function GroupChatlist({ onGroupSelect, selectedGroupId }) {
       }
     };
 
+    const handleNewConversation = (conversation) => {
+      // Only handle group chats in this component
+      if (conversation.type === "group") {
+        setGroups((prev) => {
+          // Avoid duplicates
+          if (
+            prev.some((c) => c.conversationId === conversation.conversationId)
+          ) {
+            return prev;
+          }
+          // Join the new chat room for real-time updates
+          socket.emit("join:chat", { chatId: conversation.conversationId });
+          return [conversation, ...prev];
+        });
+      }
+    };
+
     socket.on("message:new", handleNewMessage);
     socket.on("message:read", handleMessageRead);
     socket.on("conversation:updated", handleConversationUpdated);
+    socket.on("conversation:new", handleNewConversation);
 
     return () => {
       socket.off("message:new", handleNewMessage);
       socket.off("message:read", handleMessageRead);
       socket.off("conversation:updated", handleConversationUpdated);
+      socket.off("conversation:new", handleNewConversation);
     };
   }, [socket]);
 
@@ -245,7 +270,7 @@ function GroupChatlist({ onGroupSelect, selectedGroupId }) {
     try {
       let groupImageUrl = null;
       if (groupImageFile) {
-        const uploadResponse = await filesAPI.upload(groupImageFile, "groups");
+        const uploadResponse = await filesAPI.upload(groupImageFile);
         if (uploadResponse.success) {
           groupImageUrl = uploadResponse.data.url;
         }

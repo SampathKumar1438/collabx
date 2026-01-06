@@ -1,7 +1,6 @@
 import { Client } from 'minio';
 import dotenv from 'dotenv';
 import logger from '../utils/logger.js';
-import { log } from 'node:console';
 
 dotenv.config();
 

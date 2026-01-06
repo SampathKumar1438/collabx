@@ -205,6 +205,9 @@ export const getConversations = async (req, res) => {
                         conversationId: conv.conversationId,
                         createdAt: {
                             gt: lastReadAt
+                        },
+                        senderId: {
+                            not: userId
                         }
                     }
                 });

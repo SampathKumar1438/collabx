@@ -548,9 +548,10 @@ export default function GroupInfo({
         const file = new File([pendingImageBlob], "group-avatar.jpg", {
           type: "image/jpeg",
         });
-        const uploadResponse = await filesAPI.upload(file, "groups");
+        const uploadResponse = await filesAPI.upload(file);
+        console.log("Upload Response:", uploadResponse);
         if (uploadResponse.success) {
-          imageUrl = uploadResponse.data.fileUrl;
+          imageUrl = uploadResponse.data.url;
         } else {
           throw new Error("Failed to upload image");
         }

@@ -225,8 +225,8 @@ export const conversationsAPI = {
 export const filesAPI = {
     upload: async (file, folder = 'uploads', onProgress = null) => {
         const formData = new FormData();
-        formData.append('file', file);
         formData.append('folder', folder);
+        formData.append('file', file);
 
         const response = await api.post('/files/upload', formData, {
             headers: {
