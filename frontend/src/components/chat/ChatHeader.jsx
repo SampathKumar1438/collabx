@@ -191,10 +191,10 @@ export default function ChatHeader({
       );
 
   return (
-    <div className="sticky top-0 z-10 flex h-[72px] items-center justify-between border-b border-stroke/10 px-4 sm:px-6 py-3 backdrop-blur-xl dark:border-strokedark/10 gradient-bg-header">
+    <div className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-stroke/10 px-4 sm:px-6 py-3 backdrop-blur-xl dark:border-strokedark/10 gradient-bg-header">
       {/* Left side - Profile info (hide when search is open on mobile) */}
       <div
-        className={`flex items-center gap-3 ${
+        className={`flex items-center gap-5 ${
           isSearchOpen ? "hidden sm:flex" : "flex"
         }`}
       >
@@ -353,7 +353,7 @@ export default function ChatHeader({
 
       {/* Right side - Action buttons */}
       <div
-        className={`flex flex-row items-center gap-2 sm:gap-4 ${
+        className={`flex flex-row items-center gap-5 ${
           isSearchOpen ? "flex-shrink-0" : ""
         }`}
       >
@@ -387,7 +387,6 @@ export default function ChatHeader({
                 <Phone size={22} />
               </button>
             )}
-            <div className="border-l border-stroke/20 dark:border-strokedark/20 h-5 mx-1 hidden sm:block"></div>
           </>
         )}
 

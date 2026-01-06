@@ -506,27 +506,86 @@ export default function GroupInfo({
     }
   };
 
-  const handleUpdateGroupName = async () => {
+  const [pendingImageBlob, setPendingImageBlob] = useState(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState(null);
+
+  // ... (keep refs)
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (showEditModal) {
+      setEditedName(
+        groupData?.name || groupData?.conversation?.groupName || ""
+      );
+      setPendingImageBlob(null);
+      setPendingImagePreview(null);
+    }
+  }, [showEditModal, groupData]);
+
+  // ... (keep existing useEffects)
+
+  // ... (keep search/fetch functions)
+
+  // ... (keep member management functions)
+
+  const handleSaveChanges = async () => {
     if (
       !editedName.trim() ||
-      editedName === (groupData?.name || groupData?.conversation?.groupName)
+      (editedName === (groupData?.name || groupData?.conversation?.groupName) &&
+        !pendingImageBlob)
     ) {
-      setIsEditingName(false);
+      setShowEditModal(false);
       return;
     }
 
     try {
       setIsUpdating(true);
-      const response = await conversationsAPI.update(conversationId, {
-        groupName: editedName.trim(),
-      });
-      if (response.success) {
-        showSuccess("Group name updated successfully");
+      let imageUrl =
+        groupData?.avatar || groupData?.conversation?.groupImageUrl;
+
+      // 1. Upload image if changed
+      if (pendingImageBlob) {
+        const file = new File([pendingImageBlob], "group-avatar.jpg", {
+          type: "image/jpeg",
+        });
+        const uploadResponse = await filesAPI.upload(file, "groups");
+        if (uploadResponse.success) {
+          imageUrl = uploadResponse.data.fileUrl;
+        } else {
+          throw new Error("Failed to upload image");
+        }
+      }
+
+      // 2. Update Group Info (Name + Image)
+      const updates = {};
+      if (
+        editedName.trim() !==
+        (groupData?.name || groupData?.conversation?.groupName)
+      ) {
+        updates.groupName = editedName.trim();
+      }
+      if (
+        imageUrl !==
+        (groupData?.avatar || groupData?.conversation?.groupImageUrl)
+      ) {
+        updates.groupImageUrl = imageUrl;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        const response = await conversationsAPI.update(conversationId, updates);
+        if (response.success) {
+          showSuccess("Group info updated successfully");
+          setShowEditModal(false);
+          // Reset pending states
+          setPendingImageBlob(null);
+          setPendingImagePreview(null);
+        }
+      } else {
         setShowEditModal(false);
       }
     } catch (error) {
-      console.error("Error updating group name:", error);
-      showError("Failed to update group name");
+      console.error("Error updating group info:", error);
+      showError("Failed to update group info");
     } finally {
       setIsUpdating(false);
     }
@@ -545,31 +604,16 @@ export default function GroupInfo({
     }
   };
 
-  const handleCropComplete = async (croppedBlob) => {
-    try {
-      setIsUpdating(true);
-      const file = new File([croppedBlob], "group-avatar.jpg", {
-        type: "image/jpeg",
-      });
-      const uploadResponse = await filesAPI.upload(file, "groups");
-      if (uploadResponse.success) {
-        const imageUrl = uploadResponse.data.fileUrl;
-        const updateResponse = await conversationsAPI.update(conversationId, {
-          groupImageUrl: imageUrl,
-        });
-        if (updateResponse.success) {
-          showSuccess("Group image updated successfully");
-        }
-      }
-    } catch (error) {
-      console.error("Error updating group image:", error);
-      showError("Failed to update group image");
-    } finally {
-      setIsUpdating(false);
-      setShowImageCropper(false);
-      if (tempImageUrl) URL.revokeObjectURL(tempImageUrl);
-      setTempImageUrl(null);
-    }
+  const handleCropComplete = (croppedBlob) => {
+    // Just store state, don't upload yet
+    setPendingImageBlob(croppedBlob);
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setPendingImagePreview(previewUrl);
+
+    // Cleanup temp cropper url
+    setShowImageCropper(false);
+    if (tempImageUrl) URL.revokeObjectURL(tempImageUrl);
+    setTempImageUrl(null);
   };
 
   const formatFileSize = (bytes) => {
@@ -974,7 +1018,10 @@ export default function GroupInfo({
                   ))
                 ) : (
                   <div className="text-center py-8 text-gray-500 text-xs dark:text-white">
-                    <FileText size={24} className="mx-auto mb-2 opacity-50 dark:text-white" />
+                    <FileText
+                      size={24}
+                      className="mx-auto mb-2 opacity-50 dark:text-white"
+                    />
                     No files shared yet
                   </div>
                 )}
@@ -1013,7 +1060,10 @@ export default function GroupInfo({
                   ))
                 ) : (
                   <div className="text-center py-8 text-gray-500 text-xs dark:text-white">
-                    <PushPin size={24} className="mx-auto mb-2 opacity-50 dark:text-white" />
+                    <PushPin
+                      size={24}
+                      className="mx-auto mb-2 opacity-50 dark:text-white"
+                    />
                     No pinned messages
                   </div>
                 )}
@@ -1133,9 +1183,11 @@ export default function GroupInfo({
                 Cancel
               </Button>
               <Button
-                onClick={handleUpdateGroupName}
+                onClick={handleSaveChanges}
                 loading={isUpdating}
-                disabled={!editedName.trim() || isUpdating}
+                disabled={
+                  (!editedName.trim() && !pendingImageBlob) || isUpdating
+                }
               >
                 Save Changes
               </Button>
@@ -1148,6 +1200,7 @@ export default function GroupInfo({
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/20 bg-gray-100 dark:bg-boxdark-2">
                   <Avatar
                     src={
+                      pendingImagePreview ||
                       groupData?.avatar ||
                       groupData?.conversation?.groupImageUrl
                     }

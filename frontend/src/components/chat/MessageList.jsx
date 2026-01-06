@@ -133,22 +133,37 @@ const MessageList = forwardRef(
     }, [messages, messagesWithDates]);
 
     // Combine default doodle background with custom override logic
-    const customStyle = currentBackground
-      ? {
-          backgroundImage:
-            currentBackground.type === "image"
-              ? `url(${currentBackground.value})`
-              : currentBackground.type === "gradient"
-              ? currentBackground.value
-              : "none",
-          backgroundColor:
-            currentBackground.type === "color"
-              ? currentBackground.value
-              : "transparent",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }
-      : {};
+    // Background style logic
+    const getBackgroundStyle = () => {
+      if (!currentBackground) return {};
+
+      if (currentBackground.type === "pattern") {
+        return {
+          maskImage: currentBackground.value,
+          WebkitMaskImage: currentBackground.value,
+          maskRepeat: "repeat",
+          WebkitMaskRepeat: "repeat",
+          backgroundColor: "var(--pattern-primary)", // Uses the theme-aware variable
+        };
+      }
+
+      return {
+        backgroundImage:
+          currentBackground.type === "image"
+            ? `url(${currentBackground.value})`
+            : currentBackground.type === "gradient"
+            ? currentBackground.value
+            : "none",
+        backgroundColor:
+          currentBackground.type === "color"
+            ? currentBackground.value
+            : "transparent",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      };
+    };
+
+    const backgroundStyle = getBackgroundStyle();
 
     const virtuosoRef = useRef(null);
 
@@ -257,13 +272,22 @@ const MessageList = forwardRef(
     );
 
     return (
-      <div className="relative h-full w-full">
-        {/* Default Doodle Background (only visible if no custom background opaque layer is set) */}
-        {!currentBackground && <DoodleBackground />}
+      <div className="relative h-full w-full overflow-hidden">
+        {/* Layered Background System */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {!currentBackground ? (
+            <DoodleBackground />
+          ) : (
+            <div
+              className="w-full h-full transition-all duration-300"
+              style={backgroundStyle}
+            />
+          )}
+        </div>
 
         <Virtuoso
           ref={virtuosoRef}
-          style={{ height: "100%", ...customStyle }}
+          style={{ height: "100%" }}
           className="no-scrollbar z-10"
           data={messagesWithDates}
           firstItemIndex={firstItemIndex}

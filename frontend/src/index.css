@@ -34,6 +34,28 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-stroke dark:bg-strokedark rounded-full hover:bg-body dark:hover:bg-bodydark;
   }
+
+  :root {
+    --pattern-color: rgba(0, 0, 0, 0.05);
+    --pattern-color-strong: rgba(0, 0, 0, 0.1);
+    --pattern-primary: rgba(
+      255,
+      171,
+      0,
+      0.1
+    ); /* Primary (Golden Yellow) low opacity */
+  }
+
+  .dark {
+    --pattern-color: rgba(255, 255, 255, 0.05);
+    --pattern-color-strong: rgba(255, 255, 255, 0.1);
+    --pattern-primary: rgba(
+      255,
+      171,
+      0,
+      0.2
+    ); /* Slightly higher opacity for dark mode */
+  }
 }
 
 @layer components {
