@@ -248,7 +248,7 @@ export default function ChatHeader({
           <div className="flex items-center gap-2 bg-white/30 dark:bg-black/20 rounded-full h-10 px-4 transition-all ring-1 ring-transparent focus-within:ring-primary/40 backdrop-blur-sm">
             <MagnifyingGlass
               size={18}
-              className="text-gray-400 dark:text-gray-300 flex-shrink-0"
+              className="text-gray-400 dark:text-white flex-shrink-0"
             />
             <input
               ref={inputRef}
@@ -264,20 +264,20 @@ export default function ChatHeader({
             {/* Result counter & navigation */}
             {searchResults.length > 0 && (
               <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-white flex-shrink-0 border-l border-gray-300 dark:border-gray-600 pl-2 ml-1">
-                <span className="tabular-nums">
+                <span className="tabular-nums dark:text-white">
                   {currentResultIndex + 1}/{searchResults.length}
                 </span>
                 <button
                   onClick={goToPrevious}
                   disabled={currentResultIndex === 0}
-                  className="p-0.5 hover:text-black dark:hover:text-white disabled:opacity-30"
+                  className="p-0.5 hover:text-black dark:text-white dark:hover:text-white disabled:opacity-30"
                 >
                   <CaretUp size={14} />
                 </button>
                 <button
                   onClick={goToNext}
                   disabled={currentResultIndex >= searchResults.length - 1}
-                  className="p-0.5 hover:text-black dark:hover:text-white disabled:opacity-30"
+                  className="p-0.5 hover:text-black dark:text-white dark:hover:text-white disabled:opacity-30"
                 >
                   <CaretDown size={14} />
                 </button>
@@ -286,7 +286,7 @@ export default function ChatHeader({
 
             <button
               onClick={onSearchToggle}
-              className="p-1 hover:bg-white/10 dark:hover:bg-black/20 rounded-full text-gray-400 dark:text-gray-300 transition-colors flex-shrink-0"
+              className="p-1 dark:text-white hover:bg-white/10 dark:hover:bg-black/20 rounded-full text-gray-400 dark:text-gray-300 transition-colors flex-shrink-0"
             >
               <X size={16} />
             </button>
@@ -294,7 +294,7 @@ export default function ChatHeader({
 
           {/* Results Dropdown */}
           {showResults && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white/10 dark:bg-black/30 border border-white/20 dark:border-strokedark/20 rounded-xl shadow-2xl max-h-64 overflow-y-auto z-50 backdrop-blur-2xl animate-fade-in">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white/10 dark:bg-black/30 border border-white/20 dark:text-white dark:border-strokedark/20 rounded-xl shadow-2xl max-h-64 overflow-y-auto z-50 backdrop-blur-2xl animate-fade-in">
               {searchResults.slice(0, 10).map((msg, index) => (
                 <div
                   key={msg.id}
@@ -344,7 +344,7 @@ export default function ChatHeader({
 
           {/* No results */}
           {searchQuery && searchResults.length === 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white/20 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-strokedark/20 rounded-xl shadow-2xl px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300 z-50">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white/20 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:text-white dark:border-strokedark/20 rounded-xl shadow-2xl px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300 z-50">
               No messages found
             </div>
           )}

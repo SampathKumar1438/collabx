@@ -964,7 +964,7 @@ export default function GroupInbox({ groupData, onBack }) {
                   style={{ animationDelay: "300ms" }}
                 ></span>
               </div>
-              <span className="italic">{typingUser} is typing...</span>
+              <span className="italic dark:text-white">{typingUser} is typing...</span>
             </div>
           </div>
         )}

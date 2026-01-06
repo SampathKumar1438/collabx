@@ -63,7 +63,7 @@ function Dropdown({ onEdit, onDelete, onOpenBackground }) {
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors duration-200 hover:bg-gray hover:text-primary dark:hover:bg-boxdark-2"
             >
               <ImageIcon size={18} weight="duotone" />
-              Change Background
+              Background
             </button>
           )}
 

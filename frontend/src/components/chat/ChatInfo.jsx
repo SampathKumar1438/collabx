@@ -225,7 +225,7 @@ export default function ChatInfo({
         </span>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-white/10 dark:hover:bg-black/20 rounded-full transition-colors"
+          className="p-1 hover:bg-white/10 dark:hover:bg-black/20 rounded-full dark:text-white transition-colors"
         >
           <X size={20} />
         </button>
