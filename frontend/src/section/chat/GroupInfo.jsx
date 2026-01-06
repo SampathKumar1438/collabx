@@ -609,7 +609,7 @@ export default function GroupInfo({
         </span>
         <button
           onClick={handleToggleGroupInfo}
-          className="hover:bg-white/10 dark:hover:bg-black/20 rounded-full p-2 transition-all"
+          className="hover:bg-white/10 dark:hover:bg-black/20 dark:text-white rounded-full p-2 transition-all"
         >
           <X size={20} weight="bold" />
         </button>
@@ -645,7 +645,7 @@ export default function GroupInfo({
             {isAdmin && (
               <button
                 onClick={() => setShowEditModal(true)}
-                className="p-1 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                className="p-1 text-gray-400 hover:text-primary dark:text-white hover:bg-primary/10 rounded-full transition-colors"
                 title="Edit group"
               >
                 <PencilSimple size={16} />
@@ -669,7 +669,7 @@ export default function GroupInfo({
 
       {/* Quick Actions - Compact Inline */}
       <div className="px-4 py-2 border-b border-stroke/10 dark:border-strokedark/20 flex gap-2">
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stroke/20 dark:border-strokedark/20 hover:bg-white/5 dark:hover:bg-black/10 transition-colors text-xs backdrop-blur-sm">
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stroke/20 dark:text-white dark:border-strokedark hover:bg-white/5 dark:hover:bg-black/10 transition-colors text-xs backdrop-blur-sm">
           <Bell size={14} />
           Mute
         </button>
@@ -840,7 +840,7 @@ export default function GroupInfo({
                                   : member.userId
                               )
                             }
-                            className="p-1.5 hover:bg-gray-200 dark:hover:bg-boxdark rounded-full transition-colors"
+                            className="p-1.5 hover:bg-gray-200 dark:hover:bg-boxdark dark:text-white rounded-full transition-colors"
                           >
                             <DotsThree size={18} weight="bold" />
                           </button>
@@ -871,7 +871,7 @@ export default function GroupInfo({
                                       onClick={() =>
                                         handleDemoteToMember(member.userId)
                                       }
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-warning/10 text-left"
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs dark:text-white hover:bg-warning/10 text-left"
                                     >
                                       <UserMinus
                                         size={14}
@@ -973,8 +973,8 @@ export default function GroupInfo({
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500 text-xs">
-                    <FileText size={24} className="mx-auto mb-2 opacity-50" />
+                  <div className="text-center py-8 text-gray-500 text-xs dark:text-white">
+                    <FileText size={24} className="mx-auto mb-2 opacity-50 dark:text-white" />
                     No files shared yet
                   </div>
                 )}
@@ -1012,8 +1012,8 @@ export default function GroupInfo({
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500 text-xs">
-                    <PushPin size={24} className="mx-auto mb-2 opacity-50" />
+                  <div className="text-center py-8 text-gray-500 text-xs dark:text-white">
+                    <PushPin size={24} className="mx-auto mb-2 opacity-50 dark:text-white" />
                     No pinned messages
                   </div>
                 )}

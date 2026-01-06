@@ -941,7 +941,7 @@ export default function GroupInbox({ groupData, onBack }) {
             loadingMore={loadingMore}
             typingIndicator={
               typingUser ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                <div className="text-sm text-gray-500 dark:text-white italic">
                   {typingUser} is typing...
                 </div>
               ) : null

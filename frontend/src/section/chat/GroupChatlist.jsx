@@ -339,7 +339,7 @@ function GroupChatlist({ onGroupSelect, selectedGroupId }) {
                 placeholder="Search groups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input w-full"
+                className="input w-full dark:placeholder-white"
                 aria-label="Search group chats"
               />
               <button

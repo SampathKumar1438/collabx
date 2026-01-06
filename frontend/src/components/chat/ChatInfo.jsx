@@ -306,7 +306,7 @@ export default function ChatInfo({
 
       {/* Quick Actions - Compact Inline */}
       <div className="px-4 py-2 flex gap-2 border-b border-stroke dark:border-strokedark">
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stroke dark:border-strokedark hover:bg-gray-2 dark:hover:bg-boxdark-2 transition-colors text-xs">
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stroke dark:text-white dark:border-stroke dark:hover:bg-boxdark-2 transition-colors text-xs">
           <Bell size={14} />
           Mute
         </button>

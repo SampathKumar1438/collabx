@@ -485,21 +485,21 @@ export default function ChatInput({
               <div className="flex items-center gap-3 flex-grow">
                 {/* Recording indicator with glow */}
                 <div className="relative">
-                  <span className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping opacity-75"></span>
-                  <span className="relative w-3 h-3 bg-gradient-to-br from-red-500 to-rose-600 rounded-full block shadow-lg shadow-red-500/50"></span>
+                  <span className="absolute inset-0 w-3 h-3 bg-red-500 dark:bg-white rounded-full animate-ping opacity-75"></span>
+                  <span className="relative w-3 h-3 bg-gradient-to-br from-red-500 to-rose-600 dark:from-white dark:to-white rounded-full block shadow-lg dark:text-white shadow-red-500/50"></span>
                 </div>
 
                 {/* Timer */}
-                <span className="text-sm font-bold font-mono text-red-600 dark:text-red-400 min-w-[50px] bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md">
+                <span className="text-sm font-bold font-mono dark:text-white text-red-600 dark:text-red-400 min-w-[50px] bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-md">
                   {formatRecordingTime(recordingDuration)}
                 </span>
 
                 {/* Animated Waveform */}
-                <div className="flex items-center gap-[3px] h-8 flex-grow max-w-[180px] overflow-hidden px-2">
+                <div className="flex items-center dark:bg-gray-900 dark:text-white gap-[3px] h-8 flex-grow max-w-[180px] overflow-hidden px-2">
                   {waveform.map((h, i) => (
                     <div
                       key={i}
-                      className={`w-[4px] rounded-full bg-gradient-to-t from-red-500 to-rose-400 transition-all duration-150 ${
+                      className={`w-[4px] rounded-full bg-gradient-to-t from-red-500 to-rose-400 dark:from-white dark:to-white transition-all duration-150 ${
                         !isPaused && "animate-waveform"
                       }`}
                       style={{
@@ -517,7 +517,7 @@ export default function ChatInput({
                 <button
                   type="button"
                   onClick={cancelRecording}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition-all group"
+                  className="flex items-center gap-1.5 px-3 py-1.5 dark:bg-gray-900 dark:text-white rounded-lg text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition-all group"
                 >
                   <Trash
                     size={16}
@@ -529,12 +529,13 @@ export default function ChatInput({
                 </button>
 
                 {/* Pause/Resume button */}
+                {/* Play/Pause Button */}
                 <button
                   type="button"
                   onClick={isPaused ? resumeRecording : pauseRecording}
                   className={`p-2 rounded-lg transition-all ${
                     isPaused
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-600 hover:bg-green-200"
+                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 hover:bg-yellow-200"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                   }`}
                 >
@@ -545,11 +546,11 @@ export default function ChatInput({
                   )}
                 </button>
 
-                {/* Done button */}
+                {/* Done Button */}
                 <button
                   type="button"
                   onClick={stopRecording}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-md shadow-green-500/25 hover:shadow-green-500/40"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-white rounded-lg hover:from-yellow-500 hover:to-amber-600 transition-all shadow-md shadow-yellow-500/25 hover:shadow-yellow-500/40"
                 >
                   <Check size={16} weight="bold" />
                   <span className="text-xs font-semibold hidden sm:inline">
@@ -570,10 +571,10 @@ export default function ChatInput({
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={disabled}
-                className={`h-13 w-full rounded-xl border bg-white/40 dark:bg-white/5 pl-4 md:pl-5 pr-28 md:pr-36 text-black placeholder-body dark:placeholder-gray-400 outline-none transition-all backdrop-blur-sm dark:text-white ${
+                className={`h-13 w-full rounded-xl border bg-white/40 dark:bg-white/5 pl-4 md:pl-5 pr-28 md:pr-36 text-black dark:placeholder-white placeholder-body dark:placeholder-gray-400 outline-none transition-all backdrop-blur-sm dark:text-white ${
                   editingMessage
-                    ? "border-amber-500/50 focus:ring-2 focus:ring-amber-500/30"
-                    : "border-stroke/20 focus:ring-2 focus:ring-primary/30 dark:border-strokedark/20"
+                    ? "border-amber-500/50 dark:text-white focus:ring-2 focus:ring-amber-500/30"
+                    : "border-stroke/20 dark:border-stroke dark:text-white focus:ring-2 focus:ring-primary/30 dark:border-strokedark/20"
                 }`}
               />
               <div className="absolute right-2 md:right-5 top-1/2 -translate-y-1/2 items-center justify-end space-x-1 md:space-x-2 flex">
@@ -664,7 +665,7 @@ export default function ChatInput({
                 Send
               </button>
               <button
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all font-semibold text-sm border border-gray-200 dark:border-gray-700"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-white rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all font-semibold text-sm border border-gray-200 dark:border-white"
                 onClick={() => setAudioBlob(null)}
               >
                 <Trash size={16} />

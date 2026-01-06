@@ -554,11 +554,11 @@ function Chatlist({ onChatSelect, selectedChatId }) {
           {/* Contacts List */}
           <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
             {contactSearch.length < 2 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-gray-500 dark:text-white">
                 Type at least 2 characters to search
               </div>
             ) : contacts.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-gray-500 dark:text-white">
                 No contacts found
               </div>
             ) : (
