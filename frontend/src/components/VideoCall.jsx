@@ -35,7 +35,7 @@ function VideoCall() {
     if (localStream && localVideoRef.current) {
       localVideoRef.current.srcObject = localStream;
     }
-  }, [localStream]);
+  }, [localStream, isVideoEnabled]);
 
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {

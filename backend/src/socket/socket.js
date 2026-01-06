@@ -488,7 +488,10 @@ export function setupSocketHandlers(io) {
         socket.on('call:offer', ({ to, offer }) => {
             io.to(to).emit('call:offer', {
                 from: socket.id,
-                offer
+                offer,
+                callerName: socket.user.username,
+                callerAvatar: socket.user.profilePictureUrl,
+                callerId: socket.userId
             });
         });
 

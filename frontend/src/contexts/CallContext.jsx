@@ -207,18 +207,44 @@ export const CallProvider = ({ children }) => {
     };
 
     // Received an Offer (from a peer in the group or 1-to-1)
-    const handleOffer = async ({ from, offer }) => {
-      console.log(`Received offer from ${from}`);
+    const handleOffer = async ({
+      from,
+      offer,
+      callerName,
+      callerAvatar,
+      callerId,
+    }) => {
+      console.log(`Received offer from ${from} (${callerName})`);
+
+      // Store participant info if provided (Group Call Logic)
+      if (callerName) {
+        setParticipantInfo((prev) =>
+          new Map(prev).set(from, {
+            userId: callerId,
+            name: callerName || "User",
+            avatar: callerAvatar,
+          })
+        );
+      }
+
       const pc = createPeerConnection(from, false);
       try {
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+        // Process queued remote ICE candidates if any
+        if (pc.remoteCandidates && pc.remoteCandidates.length > 0) {
+          console.log(
+            `Processing ${pc.remoteCandidates.length} queued remote candidates for ${from}`
+          );
+          for (const candidate of pc.remoteCandidates) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          }
+          pc.remoteCandidates = [];
+        }
+
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.emit("call:answer", { to: from, answer });
-
-        // Flush buffer if any (for this specific peer)
-        // Note: simple buffer needs to be map-based for proper multiple peers support
-        // but for now assume 1 buffer or improve buffer logic later.
       } catch (err) {
         console.error("Error handling offer", err);
       }
@@ -263,6 +289,17 @@ export const CallProvider = ({ children }) => {
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
 
+        // Process queued remote ICE candidates if any
+        if (pc.remoteCandidates && pc.remoteCandidates.length > 0) {
+          console.log(
+            `Processing ${pc.remoteCandidates.length} queued remote candidates for ${responderSocketId}`
+          );
+          for (const candidate of pc.remoteCandidates) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          }
+          pc.remoteCandidates = [];
+        }
+
         // Flush queued candidates if any (for 1-to-1 initiator)
         if (pc.queuedCandidates && pc.queuedCandidates.length > 0) {
           console.log(
@@ -285,26 +322,27 @@ export const CallProvider = ({ children }) => {
 
     const handleIceCandidate = async ({ from, candidate }) => {
       // 'from' is crucial now
-      const targetSocketId = from; // For group call candidates usually come with 'from' or we deduce
-      // The backend emits { candidate, from: senderSocketId }
-
-      // If we don't have 'from' (legacy 1-to-1 without update), fallback?
-      // Our backend update ensures 'from' is sent.
-
+      const targetSocketId = from;
       let pc = peerConnections.current.get(targetSocketId);
 
       // Fix for legacy 1-to-1: if we don't have a PC for this socket ID yet,
       // check if we have the placeholder 'default-1-1'.
       if (!pc) {
         pc = peerConnections.current.get("default-1-1");
-        if (pc) {
-          console.log(`Applying ICE candidate from ${from} to default-1-1 PC`);
-        }
       }
 
       if (pc) {
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            // Queue it
+            if (!pc.remoteCandidates) pc.remoteCandidates = [];
+            pc.remoteCandidates.push(candidate);
+            console.log(
+              `Queued remote ICE candidate from ${from} (pending remote description)`
+            );
+          }
         } catch (e) {
           console.error("Error adding ice candidate", e);
         }
@@ -327,6 +365,17 @@ export const CallProvider = ({ children }) => {
     };
 
     const handleCallRejected = () => {
+      toast.error("Call declined");
+      endCallCleanup();
+    };
+
+    const handleBusy = () => {
+      toast.error("User is busy in another call");
+      endCallCleanup();
+    };
+
+    const handleOffline = () => {
+      toast.error("User is currently offline");
       endCallCleanup();
     };
 
@@ -338,6 +387,8 @@ export const CallProvider = ({ children }) => {
     socket.on("call:peer-left", handlePeerLeft);
     socket.on("call:ended", handleCallEnded);
     socket.on("call:rejected", handleCallRejected);
+    socket.on("call:busy", handleBusy);
+    socket.on("call:offline", handleOffline);
 
     return () => {
       socket.off("call:incoming", handleIncomingCall);
@@ -348,6 +399,8 @@ export const CallProvider = ({ children }) => {
       socket.off("call:peer-left", handlePeerLeft);
       socket.off("call:ended", handleCallEnded);
       socket.off("call:rejected", handleCallRejected);
+      socket.off("call:busy", handleBusy);
+      socket.off("call:offline", handleOffline);
     };
   }, [socket, callState, call]); // 'call' dep needed for isGroup check inside?
 
