@@ -1,0 +1,11 @@
+# Proxy API requests to EC2 Backend
+/api/*  http://13.60.228.255:5000/api/:splat  200
+
+# Proxy MinIO file requests to EC2 Backend (which proxies to MinIO)
+/collabx/*  http://13.60.228.255:5000/collabx/:splat  200
+
+# Proxy Socket.IO requests to EC2 Backend
+/socket.io/*  http://13.60.228.255:5000/socket.io/:splat  200
+
+# Handle client-side routing (Catch-all for SPA)
+/*  /index.html  200
