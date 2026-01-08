@@ -1,4 +1,0 @@
-{$EC2_PUBLIC_IP}.nip.io {
-    # Proxy ALL requests to backend (API, Socket.IO, MinIO Proxy)
-    reverse_proxy backend:5000
-}
