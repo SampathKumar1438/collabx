@@ -136,11 +136,11 @@ export default function App() {
               }
             />
             <Route
-              path="/ai-chat"
+              path="/polls"
               element={
                 <ProtectedRoute>
                   <LazyPage>
-                    <Chat view="ai" />
+                    <Chat view="polls" />
                   </LazyPage>
                 </ProtectedRoute>
               }

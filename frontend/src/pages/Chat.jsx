@@ -7,7 +7,9 @@ const Chatlist = lazy(() => import("../section/chat/Chatlist"));
 const Inbox = lazy(() => import("../section/chat/Inbox"));
 const GroupChatlist = lazy(() => import("../section/chat/GroupChatlist"));
 const GroupInbox = lazy(() => import("../section/chat/GroupInbox"));
-const AIChat = lazy(() => import("../section/chat/AIChat"));
+const AbsolutePollsPanel = lazy(() =>
+  import("../section/polls/AbsolutePollsPanel")
+);
 
 // Loading component for lazy sections
 const SectionLoader = () => (
@@ -33,7 +35,7 @@ function Chat({ view = "dms" }) {
   const getCurrentView = () => {
     if (view === "dms" || location.pathname.startsWith("/messages")) return 0;
     if (view === "groups" || location.pathname.startsWith("/groups")) return 1;
-    if (view === "ai" || location.pathname === "/ai-chat") return 2;
+    if (view === "polls" || location.pathname === "/polls") return 2;
     return 0;
   };
 
@@ -53,7 +55,7 @@ function Chat({ view = "dms" }) {
         navigate("/groups");
         break;
       case 2:
-        navigate("/ai-chat");
+        navigate("/polls");
         break;
       case 3:
         navigate("/profile");
@@ -156,11 +158,11 @@ function Chat({ view = "dms" }) {
             </Suspense>
           )}
 
-          {/* AI Chat View */}
+          {/* Polls View */}
           {currentView === 2 && (
             <Suspense fallback={<SectionLoader />}>
               <div className="flex-1 flex h-full">
-                <AIChat />
+                <AbsolutePollsPanel />
               </div>
             </Suspense>
           )}

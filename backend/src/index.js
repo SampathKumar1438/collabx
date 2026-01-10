@@ -23,6 +23,7 @@ import userRoutes from './routes/user.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import messageRoutes from './routes/message.routes.js';
 import fileRoutes from './routes/file.routes.js';
+import pollRoutes from './routes/poll.routes.js';
 
 // Import socket handlers
 import { setupSocketHandlers } from './socket/socket.js';
@@ -101,6 +102,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/conversations', chatRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/polls', pollRoutes);
 
 // This allows serving MinIO files via the same port as the backend (5000)
 const bucketName = process.env.MINIO_BUCKET || 'collabx';

@@ -3,7 +3,7 @@ import {
   SignOut,
   UserCircle,
   Users,
-  Robot,
+  ChartBar,
 } from "@phosphor-icons/react";
 import DarkModeToggle from "../../components/DarkModeToggle";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -28,10 +28,10 @@ const NAVIGATION = [
   },
   {
     key: 2,
-    title: "AI",
-    icon: <Robot size={24} weight="duotone" />,
-    route: "/ai-chat",
-    matchPaths: ["/ai-chat"],
+    title: "Polls",
+    icon: <ChartBar size={24} weight="duotone" />,
+    route: "/polls",
+    matchPaths: ["/polls"],
   },
   {
     key: 3,

@@ -35,6 +35,8 @@ model User {
   createdConversations Conversation[] @relation("ConversationCreator")
   participants         Participant[]
   sentMessages         Message[]
+  createdPolls         Poll[]    @relation("CreatedPolls")
+  pollVotes            PollVote[]
 
   @@map("users")
 }
@@ -99,4 +101,48 @@ model Message {
   @@index([senderId])
   @@index([createdAt])
   @@map("messages")
+}
+
+model Poll {
+  pollId    String    @id @default(uuid()) @map("poll_id")
+  creatorId String    @map("creator_id")
+  question  String    @db.Text
+  type      String    @default("single") @db.VarChar(10)
+  status    String    @default("open") @db.VarChar(10)
+  anonymous Boolean   @default(false)
+  expiry    DateTime?
+  audience  Json?     @default("[]")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  creator User         @relation("CreatedPolls", fields: [creatorId], references: [userId], onDelete: Cascade)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  optionId String @id @default(uuid()) @map("option_id")
+  pollId   String @map("poll_id")
+  text     String @db.Text
+
+  poll  Poll       @relation(fields: [pollId], references: [pollId], onDelete: Cascade)
+  votes PollVote[]
+
+  @@map("poll_options")
+}
+
+model PollVote {
+  voteId    String   @id @default(uuid()) @map("vote_id")
+  pollId    String   @map("poll_id")
+  optionId  String   @map("option_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  poll   Poll       @relation(fields: [pollId], references: [pollId], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [optionId], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, optionId])
+  @@map("poll_votes")
 }
