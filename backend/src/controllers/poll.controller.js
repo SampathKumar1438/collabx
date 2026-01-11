@@ -75,6 +75,10 @@ export const getPolls = async (req, res) => {
         // Let's try explicit Prisma many-to-many filtering logic or simple application filtering if dataset is small.
         // Or better: Use Prisma's JSON array containment if DB supports it (Postgres does with @>)
 
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 4;
+        const skip = (page - 1) * limit;
+
         const polls = await prisma.poll.findMany({
             where: {
                 OR: [
@@ -106,9 +110,11 @@ export const getPolls = async (req, res) => {
                         profilePictureUrl: true
                     }
                 },
-                votes: true // To check if user voted easily
+                votes: true
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit
         });
 
         // Transform for frontend if needed (e.g. calculate vote counts/percentages)
@@ -149,23 +155,23 @@ export const votePoll = async (req, res) => {
             return res.status(400).json({ error: 'Poll has expired' });
         }
 
-        // Check if user already voted
-        const existingVote = await prisma.pollVote.findUnique({
-            where: {
-                userId_optionId: { userId, optionId } // This specific combo
-            }
-        });
-
-        // Actually we need to check if user voted ANY option in this poll
-        const userVote = await prisma.pollVote.findFirst({
+        // Check if user already voted in this poll
+        const existingVote = await prisma.pollVote.findFirst({
             where: { pollId, userId }
         });
 
-        if (userVote) {
-            return res.status(400).json({ error: 'You have already voted in this poll' });
+        // Loop Logic: If existing vote, remove it (Switch Vote)
+        if (existingVote) {
+            // Use deleteMany to avoid race conditions (e.g. if user double-clicks)
+            await prisma.pollVote.deleteMany({
+                where: {
+                    pollId,
+                    userId
+                }
+            });
         }
 
-        // Create vote
+        // Create new vote
         const newVote = await prisma.pollVote.create({
             data: {
                 pollId,
@@ -180,15 +186,16 @@ export const votePoll = async (req, res) => {
         // Emit update
         const io = req.app.get('io');
 
-        // Broadcast update to poll audience
-        // For simplicity, broadcasting to everyone or use same logic as create
+        // Payload includes both added and removed (if any) to update frontend counts accurately
         const updatePayload = {
             pollId,
-            optionId,
+            optionId, // New option
+            removedOptionId: existingVote ? existingVote.optionId : null,
             userId,
             username: poll.anonymous ? 'Anonymous' : newVote.user.username
         };
 
+        // Broadcast logic...
         if (poll.audience && Array.isArray(poll.audience) && poll.audience.length > 0) {
             const targetUsers = [...new Set([...poll.audience, poll.creatorId])];
             targetUsers.forEach(uid => {

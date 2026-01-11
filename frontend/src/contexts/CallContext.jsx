@@ -85,6 +85,12 @@ export const CallProvider = ({ children }) => {
     ],
   };
 
+  const audioConstraints = {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  };
+
   // --- Audio Analysis Code ---
   const cleanupAudioAnalysis = () => {
     if (animationFrameRef.current) {
@@ -206,7 +212,15 @@ export const CallProvider = ({ children }) => {
     pc.ontrack = (event) => {
       console.log(`Received remote track from ${peerSocketId}`);
       const stream = event.streams[0];
-      setRemoteStreams((prev) => new Map(prev).set(peerSocketId, stream));
+
+      // Optimization: Only update state if the stream is different
+      setRemoteStreams((prev) => {
+        const currentStream = prev.get(peerSocketId);
+        if (currentStream && currentStream.id === stream.id) {
+          return prev;
+        }
+        return new Map(prev).set(peerSocketId, stream);
+      });
     };
 
     pc.onconnectionstatechange = () => {
@@ -542,7 +556,7 @@ export const CallProvider = ({ children }) => {
       try {
         // Try to get video if requested
         stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: audioConstraints,
           video: isVideo ? true : false,
         });
       } catch (videoError) {
@@ -684,7 +698,7 @@ export const CallProvider = ({ children }) => {
       try {
         // Try to get video if requested
         stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
+          audio: audioConstraints,
           video: call.isVideo,
         });
       } catch (videoError) {

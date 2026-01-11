@@ -202,10 +202,10 @@ export default function CreatePollModal({ isOpen, onClose, onCreate }) {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-black dark:text-white">
-                      Anonymous Voting
+                      Private Poll
                     </p>
                     <p className="text-xs text-body dark:text-bodydark">
-                      Hide user names in results
+                      Hide voter names (Only vote counts visible)
                     </p>
                   </div>
                 </div>

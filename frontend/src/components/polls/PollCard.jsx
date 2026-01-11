@@ -4,10 +4,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import VotersListModal from "./VotersListModal";
 
 export default function PollCard({ poll, onVote }) {
-  const [selectedOptions, setSelectedOptions] = useState([]);
-  const [hasVoted, setHasVoted] = useState(false);
+  // Initialize state from props if user already voted
+  const [selectedOptions, setSelectedOptions] = useState(
+    poll.userVotedOptionId ? [poll.userVotedOptionId] : []
+  );
+  const [hasVoted, setHasVoted] = useState(!!poll.userVotedOptionId);
   const [showVotersModal, setShowVotersModal] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
+
+  // Sync state if poll prop updates (e.g. from socket or pagination reload)
+  useEffect(() => {
+    if (poll.userVotedOptionId) {
+      setSelectedOptions([poll.userVotedOptionId]);
+      setHasVoted(true);
+    }
+  }, [poll.userVotedOptionId]);
 
   useEffect(() => {
     if (poll.expiry) {
@@ -31,8 +42,9 @@ export default function PollCard({ poll, onVote }) {
   );
 
   const handleSelect = (optionId) => {
-    if (hasVoted || !isOpen) return;
+    if (!isOpen) return;
 
+    // Allow changing selection even if already voted
     if (isMultiple) {
       setSelectedOptions((prev) =>
         prev.includes(optionId)
@@ -50,13 +62,22 @@ export default function PollCard({ poll, onVote }) {
     onVote(poll.pollId, selectedOptions);
   };
 
+  // Check if selection changed from initial vote to show "Update Vote"
+  const hasChangedStart = poll.userVotedOptionId
+    ? !selectedOptions.includes(poll.userVotedOptionId)
+    : selectedOptions.length > 0;
+
+  // For simplicity, just show Vote button if selection exists and is different or new
+  // Actually, if simply selectedOptions is not empty, allow voting/updating?
+  // Let's rely on standard flow.
+
   return (
     <motion.div
       layout
-      className={`rounded-xl border p-4 transition-all duration-300 ${
+      className={`rounded-xl border p-4 transition-all duration-300 relative overflow-hidden backdrop-blur-sm ${
         isOpen
-          ? "bg-white dark:bg-boxdark border-stroke dark:border-strokedark shadow-sm"
-          : "bg-gray-50 dark:bg-meta-4/20 border-stroke/50 dark:border-strokedark/50 opacity-90"
+          ? "gradient-bg-subtle border-stroke/20 dark:border-strokedark/20 shadow-sm"
+          : "bg-gray-50/90 dark:bg-meta-4/20 border-stroke/50 dark:border-strokedark/50 opacity-90"
       }`}
     >
       {/* Header */}
@@ -81,7 +102,7 @@ export default function PollCard({ poll, onVote }) {
             >
               {isOpen ? "Open" : "Closed"}
             </span>
-            {poll.anonymous && <span>• Anonymous</span>}
+            {poll.anonymous && <span>• Private poll</span>}
             {isOpen && poll.expiry && (
               <span className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">
                 <Clock size={12} weight="bold" />
@@ -115,36 +136,36 @@ export default function PollCard({ poll, onVote }) {
             <div
               key={option.optionId || option.id}
               onClick={() => handleSelect(option.optionId || option.id)}
-              className={`relative overflow-hidden rounded-lg border transition-all cursor-pointer ${
-                hasVoted || !isOpen
-                  ? "border-transparent bg-gray-100 dark:bg-meta-4/30"
+              className={`relative overflow-hidden rounded-lg border transition-all cursor-pointer group ${
+                !isOpen
+                  ? "border-transparent bg-gray-100 dark:bg-meta-4/30 cursor-default"
                   : isSelected
                   ? "border-primary bg-primary/5 ring-1 ring-primary/20"
                   : "border-stroke dark:border-strokedark hover:border-primary/50 dark:hover:border-primary/50 bg-white dark:bg-boxdark"
               }`}
             >
-              {/* Progress Bar Background (Results) */}
+              {/* Progress Bar Background (Results) - Always show if voted or closed */}
               {(hasVoted || !isOpen) && (
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className={`absolute top-0 left-0 h-full ${
-                    isSelected ? "bg-primary/20" : "bg-gray-200 dark:bg-meta-4"
+                  className={`absolute top-0 left-0 h-full opacity-30 ${
+                    isSelected ? "bg-primary" : "bg-gray-300 dark:bg-meta-4"
                   }`}
                 />
               )}
 
               <div className="relative z-10 flex items-center justify-between p-3">
                 <div className="flex items-center gap-3">
-                  {!hasVoted && isOpen && (
+                  {isOpen && (
                     <div
                       className={`flex h-5 w-5 items-center justify-center rounded-${
                         isMultiple ? "md" : "full"
-                      } border ${
+                      } border transition-colors ${
                         isSelected
                           ? "border-primary bg-primary text-white"
-                          : "border-body/30 dark:border-bodydark/30"
+                          : "border-body/30 dark:border-bodydark/30 group-hover:border-primary/60"
                       }`}
                     >
                       {isSelected &&
@@ -204,17 +225,25 @@ export default function PollCard({ poll, onVote }) {
         </div>
 
         <AnimatePresence>
-          {selectedOptions.length > 0 && !hasVoted && isOpen && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              onClick={handleVote}
-              className="px-4 py-1.5 bg-primary text-white text-sm font-medium rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
-            >
-              Vote
-            </motion.button>
-          )}
+          {isOpen &&
+            // Logic: Show button if not voted OR if voted but selection changed from original
+            // Simplifying: Always show Vote/Update button if selection is made.
+            // If already voted same option, maybe show "Voted"?
+            // Let's just show "Update Vote" if hasVoted is true
+            selectedOptions.length > 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={handleVote}
+                // Disable if selection matches initial vote to avoid spam?
+                // But 'poll.userVotedOptionId' might lag.
+                // Just allow clicking.
+                className="px-4 py-1.5 bg-primary text-white text-sm font-medium rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
+              >
+                {poll.userVotedOptionId ? "Update Vote" : "Vote"}
+              </motion.button>
+            )}
         </AnimatePresence>
       </div>
 
