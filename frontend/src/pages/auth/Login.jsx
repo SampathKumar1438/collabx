@@ -171,7 +171,7 @@ export default function Login() {
                 Sign In
               </Button>
             </form>
-{/* 
+            {/* 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-stroke dark:border-strokedark"></div>
@@ -181,10 +181,6 @@ export default function Login() {
                   or continue with
                 </span>
               </div>
-            </div> */}
-
-            {/* <div className="flex justify-center">
-              <GoogleSignInButton />
             </div> */}
 
             <p className="text-center text-sm text-gray-500 mt-8 pb-4">

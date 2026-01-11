@@ -160,32 +160,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const googleLogin = async (credential) => {
-    try {
-      const response = await api.post("/auth/google", { credential });
-      if (response.data.success && response.data.data) {
-        // Access token automatically stored by response interceptor
-        setUser(response.data.data.user);
-        setIsAuthenticated(true);
-        if (response.data.data.user?.userId) {
-          localStorage.setItem("userId", response.data.data.user.userId);
-        }
-        const isNewUser = response.data.data.isNewUser;
-        toast.success(
-          isNewUser
-            ? "Account created successfully!"
-            : "Google Sign-In successful!"
-        );
-        return { success: true, isNewUser };
-      }
-      return { success: false, error: "Google Sign-In failed" };
-    } catch (error) {
-      const errorMsg = error.response?.data?.error || "Google Sign-In failed";
-      toast.error(errorMsg);
-      return { success: false, error: errorMsg };
-    }
-  };
-
   const logout = async () => {
     try {
       await api.post("/auth/logout");
@@ -298,7 +272,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     register,
-    googleLogin,
+
     logout,
     updateProfile,
     checkAuth,

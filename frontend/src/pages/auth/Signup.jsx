@@ -270,21 +270,6 @@ export default function Signup() {
               </Button>
             </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-stroke dark:border-strokedark"></div>
-              </div>
-              {/* <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-whiten dark:bg-boxdark-2 text-gray-500">
-                  or sign up with
-                </span>
-              </div> */}
-            </div>
-
-            {/* <div className="flex justify-center">
-              <GoogleSignInButton mode="signup" />
-            </div> */}
-
             <p className="text-center text-sm text-gray-500 mt-8 pb-4">
               Already have an account?{" "}
               <Link

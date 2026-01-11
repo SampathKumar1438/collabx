@@ -1,46 +1,33 @@
 import { useState, useEffect } from "react";
-import {
-  Phone,
-  Microphone,
-  MicrophoneSlash,
-  SpeakerHigh,
-  SpeakerSlash,
-  Users,
-} from "@phosphor-icons/react";
+import { Phone, Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import Avatar from "./common/Avatar";
+import { useCall } from "../contexts/CallContext";
 
-function AudioCall({ participants = [], onEndCall, isGroup = false }) {
-  const [isMuted, setIsMuted] = useState(false);
-  const [isSpeakerOff, setIsSpeakerOff] = useState(false);
+function AudioCall() {
+  const {
+    call,
+    callState,
+    remoteStreams,
+    participantInfo,
+    endCall,
+    isMuted,
+    setIsMuted,
+    activeSpeakers,
+    localStream,
+  } = useCall();
+
   const [callDuration, setCallDuration] = useState(0);
-  const [callStatus, setCallStatus] = useState("connecting"); // connecting, ringing, connected
 
   // Timer for call duration
   useEffect(() => {
-    // Simulate call connecting
-    const connectTimer = setTimeout(() => {
-      setCallStatus("ringing");
-    }, 1000);
-
-    const answerTimer = setTimeout(() => {
-      setCallStatus("connected");
-    }, 3000);
-
-    return () => {
-      clearTimeout(connectTimer);
-      clearTimeout(answerTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (callStatus === "connected") {
-      const timer = setInterval(() => {
+    let timer;
+    if (callState === "connected") {
+      timer = setInterval(() => {
         setCallDuration((prev) => prev + 1);
       }, 1000);
-
-      return () => clearInterval(timer);
     }
-  }, [callStatus]);
+    return () => clearInterval(timer);
+  }, [callState]);
 
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -50,238 +37,171 @@ function AudioCall({ participants = [], onEndCall, isGroup = false }) {
       .padStart(2, "0")}`;
   };
 
-  // Default single participant if none provided
-  const defaultParticipant = {
-    id: 1,
-    name: "Sarah Johnson",
-    avatar: null,
-    status: "online",
-  };
+  if (!call) return null;
 
-  const callParticipants =
-    participants.length > 0 ? participants : [defaultParticipant];
+  // Build Tiles
+  const tiles = [];
 
-  const getStatusText = () => {
-    if (callStatus === "connecting") return "Connecting...";
-    if (callStatus === "ringing") return "Ringing...";
-    return formatDuration(callDuration);
-  };
+  // 1. Local
+  if (localStream) {
+    // Or just always show local user even if stream is loading
+    tiles.push({
+      id: "local",
+      isLocal: true,
+      name: "You",
+      avatar: null, // Context could provide this
+    });
+  }
+
+  // 2. Remote
+  remoteStreams.forEach((_, id) => {
+    let info = participantInfo.get(id);
+    if (!info && !call.isGroup) {
+      info = {
+        name: call.recipient?.name || call.caller?.name || "User",
+        avatar: call.recipient?.avatar || call.caller?.avatar,
+      };
+    }
+    tiles.push({
+      id: id,
+      isLocal: false,
+      name: info?.name || "User",
+      avatar: info?.avatar,
+    });
+  });
+
+  // Calculate Grid Columns
+  const count = tiles.length;
+  let gridClass = "grid-cols-1";
+  if (count > 1) gridClass = "grid-cols-1 md:grid-cols-2";
+  if (count > 2) gridClass = "grid-cols-2 md:grid-cols-2";
+  if (count > 4) gridClass = "grid-cols-2 md:grid-cols-3";
+  if (count > 6) gridClass = "grid-cols-3 md:grid-cols-3";
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary/90 via-primary to-primary/80 flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center animate-fade-in text-white">
       {/* Animated background circles */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
         <div
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
         ></div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center max-w-md w-full px-6">
-        {isGroup ? (
-          // Group call UI
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-32 h-32 bg-white/20 backdrop-blur-sm rounded-full mb-6">
-              <Users size={64} weight="duotone" className="text-white" />
-            </div>
-            <h2 className="text-white text-3xl font-bold mb-2">
-              Group Audio Call
-            </h2>
-            <p className="text-white/80 text-lg mb-4">
-              {callParticipants.length} participants
-            </p>
-
-            {/* Participants list */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 max-h-48 overflow-auto">
-              {callParticipants.map((participant, index) => (
-                <div
-                  key={participant.id}
-                  className={`flex items-center gap-3 ${
-                    index > 0 ? "mt-3" : ""
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30">
-                    <Avatar
-                      src={participant.avatar}
-                      alt={participant.name}
-                      size="custom"
-                      className="w-full h-full"
-                    />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">{participant.name}</p>
-                    <p className="text-white/60 text-sm">
-                      {participant.status}
-                    </p>
-                  </div>
-                  {!isMuted && participant.id === 1 && (
-                    <div className="flex gap-0.5">
-                      <div className="w-1 h-4 bg-white rounded-full animate-pulse"></div>
-                      <div
-                        className="w-1 h-6 bg-white rounded-full animate-pulse"
-                        style={{ animationDelay: "0.1s" }}
-                      ></div>
-                      <div
-                        className="w-1 h-5 bg-white rounded-full animate-pulse"
-                        style={{ animationDelay: "0.2s" }}
-                      ></div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          // 1-on-1 call UI
-          <div className="text-center mb-12">
-            <div className="relative inline-block mb-8">
-              {/* Main avatar */}
-              <div className="relative z-10 w-48 h-48 rounded-full overflow-hidden border-8 border-white/20">
-                <Avatar
-                  src={callParticipants[0]?.avatar}
-                  alt={callParticipants[0]?.name}
-                  size="custom"
-                  className="w-full h-full"
-                />
-              </div>
-
-              {/* Animated rings */}
-              {callStatus === "ringing" && (
-                <>
-                  <div className="absolute inset-0 w-48 h-48 rounded-full border-4 border-white/30 animate-ping"></div>
-                  <div
-                    className="absolute inset-0 w-48 h-48 rounded-full border-4 border-white/20 animate-ping"
-                    style={{ animationDelay: "0.5s" }}
-                  ></div>
-                </>
-              )}
-
-              {/* Audio wave animation (when connected and not muted) */}
-              {callStatus === "connected" && !isMuted && (
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
-                  <div className="w-2 h-8 bg-white rounded-full animate-pulse"></div>
-                  <div
-                    className="w-2 h-12 bg-white rounded-full animate-pulse"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-10 bg-white rounded-full animate-pulse"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-14 bg-white rounded-full animate-pulse"
-                    style={{ animationDelay: "0.3s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-10 bg-white rounded-full animate-pulse"
-                    style={{ animationDelay: "0.4s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-12 bg-white rounded-full animate-pulse"
-                    style={{ animationDelay: "0.5s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-8 bg-white rounded-full animate-pulse"
-                    style={{ animationDelay: "0.6s" }}
-                  ></div>
-                </div>
-              )}
-            </div>
-
-            <h2 className="text-white text-4xl font-bold mb-3">
-              {callParticipants[0]?.name}
-            </h2>
-            <p className="text-white/90 text-xl">{getStatusText()}</p>
-          </div>
-        )}
-
-        {/* Call status indicator */}
-        <div className="mb-8">
-          <div
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
-              callStatus === "connected" ? "bg-success/20" : "bg-white/10"
-            } backdrop-blur-sm`}
-          >
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/5 flex items-center gap-2">
             <div
               className={`w-2 h-2 rounded-full ${
-                callStatus === "connected"
-                  ? "bg-success animate-pulse"
-                  : "bg-white animate-pulse"
+                callState === "connected"
+                  ? "bg-green-500 animate-pulse"
+                  : "bg-yellow-500"
               }`}
             ></div>
-            <span className="text-white text-sm font-medium">
-              {callStatus === "connected" ? "Connected" : "Connecting"}
+            <span className="text-sm font-medium tracking-wide">
+              {callState === "connected"
+                ? formatDuration(callDuration)
+                : "Connecting..."}
             </span>
           </div>
         </div>
+      </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-6">
-          {/* Microphone */}
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className={`p-6 rounded-full transition-all shadow-xl ${
-                isMuted
-                  ? "bg-danger hover:bg-danger/90"
-                  : "bg-white/20 hover:bg-white/30 backdrop-blur-sm"
+      {/* Grid Area */}
+      <div
+        className={`p-6 w-full max-w-7xl grid ${gridClass} gap-6 content-center flex-1 z-10 overflow-auto`}
+      >
+        {tiles.map((tile) => {
+          const isSpeaking = activeSpeakers.has(tile.id);
+
+          return (
+            <div
+              key={tile.id}
+              className={`relative bg-white/5 backdrop-blur-md rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center aspect-square md:aspect-auto ${
+                isSpeaking
+                  ? "border-primary shadow-[0_0_30px_rgba(var(--primary-rgb),0.3)] scale-[1.02]"
+                  : "border-white/10 hover:border-white/20"
               }`}
-              aria-label={isMuted ? "Unmute" : "Mute"}
             >
-              {isMuted ? (
-                <MicrophoneSlash
-                  size={32}
-                  weight="fill"
-                  className="text-white"
-                />
-              ) : (
-                <Microphone size={32} weight="fill" className="text-white" />
-              )}
-            </button>
-            <span className="text-white/80 text-xs">
-              {isMuted ? "Unmute" : "Mute"}
-            </span>
-          </div>
+              {/* Avatar Circle */}
+              <div className="relative mb-4">
+                {/* Speaking Waves */}
+                {isSpeaking && (
+                  <>
+                    <div className="absolute inset-0 rounded-full border-4 border-primary/40 animate-ping"></div>
+                    <div className="absolute inset-[-10px] rounded-full border-2 border-primary/20 animate-pulse"></div>
+                  </>
+                )}
 
-          {/* End Call */}
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={onEndCall}
-              className="p-7 rounded-full bg-danger hover:bg-danger/90 transition-all shadow-2xl scale-110"
-              aria-label="End call"
-            >
-              <Phone
-                size={36}
-                weight="fill"
-                className="text-white rotate-135"
-              />
-            </button>
-            <span className="text-white/80 text-xs">End Call</span>
-          </div>
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl relative z-10">
+                  <Avatar
+                    src={tile.avatar}
+                    alt={tile.name}
+                    size="custom"
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
 
-          {/* Speaker */}
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={() => setIsSpeakerOff(!isSpeakerOff)}
-              className={`p-6 rounded-full transition-all shadow-xl ${
-                isSpeakerOff
-                  ? "bg-danger hover:bg-danger/90"
-                  : "bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-              }`}
-              aria-label={isSpeakerOff ? "Speaker on" : "Speaker off"}
-            >
-              {isSpeakerOff ? (
-                <SpeakerSlash size={32} weight="fill" className="text-white" />
-              ) : (
-                <SpeakerHigh size={32} weight="fill" className="text-white" />
-              )}
-            </button>
-            <span className="text-white/80 text-xs">
-              {isSpeakerOff ? "Speaker" : "Speaker"}
-            </span>
-          </div>
-        </div>
+              {/* Name & Status */}
+              <div className="text-center">
+                <h3 className="text-xl font-bold mb-1">{tile.name}</h3>
+                <p className="text-white/50 text-sm flex items-center justify-center gap-1.5">
+                  {isSpeaking ? (
+                    <>
+                      <Microphone
+                        size={14}
+                        weight="fill"
+                        className="text-primary"
+                      />
+                      <span className="text-primary font-medium">
+                        Speaking...
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {tile.isLocal && isMuted ? (
+                        <MicrophoneSlash size={14} />
+                      ) : (
+                        <Microphone size={14} className="opacity-50" />
+                      )}
+                      <span>
+                        {tile.isLocal && isMuted ? "Muted" : "Listening"}
+                      </span>
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Controls */}
+      <div className="mb-8 flex items-center gap-6 z-20">
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className={`p-6 rounded-full transition-all shadow-xl backdrop-blur-md border ${
+            isMuted
+              ? "bg-white text-black border-white"
+              : "bg-black/40 text-white border-white/10 hover:bg-black/60"
+          }`}
+        >
+          {isMuted ? (
+            <MicrophoneSlash size={32} weight="fill" />
+          ) : (
+            <Microphone size={32} weight="fill" />
+          )}
+        </button>
+
+        <button
+          onClick={endCall}
+          className="p-8 rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-2xl hover:scale-105 hover:shadow-red-500/30"
+        >
+          <Phone size={40} weight="fill" className="rotate-[135deg]" />
+        </button>
       </div>
     </div>
   );

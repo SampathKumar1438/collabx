@@ -43,6 +43,13 @@ export const CallProvider = ({ children }) => {
   // Using local asset for Teams Ringtone
   const ringtoneRef = useRef(new Audio(callTune));
 
+  // Audio Analysis Refs
+  const audioContextRef = useRef(null);
+  const analysersRef = useRef(new Map()); // id -> AnalyserNode
+  const sourceNodesRef = useRef(new Map()); // id -> MediaStreamSource
+  const animationFrameRef = useRef(null);
+  const [activeSpeakers, setActiveSpeakers] = useState(new Set());
+
   const playRingtone = () => {
     try {
       ringtoneRef.current.loop = true;
@@ -76,6 +83,102 @@ export const CallProvider = ({ children }) => {
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:global.stun.twilio.com:3478" },
     ],
+  };
+
+  // --- Audio Analysis Code ---
+  const cleanupAudioAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    // Disconnect and clean up nodes
+    sourceNodesRef.current.forEach((node) => node.disconnect());
+    sourceNodesRef.current.clear();
+    analysersRef.current.forEach((node) => node.disconnect());
+    analysersRef.current.clear();
+
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    setActiveSpeakers(new Set());
+  };
+
+  const setupAudioAnalysis = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume();
+    }
+
+    return audioContextRef.current;
+  };
+
+  const attachStreamAnalyzer = (stream, id) => {
+    try {
+      if (!stream || !stream.getAudioTracks().length) return;
+
+      const audioCtx = setupAudioAnalysis();
+
+      // If we already have an analyzer for this ID, check if stream changed?
+      // Simpler to just cleanup old one for this ID if exists
+      if (sourceNodesRef.current.has(id)) {
+        sourceNodesRef.current.get(id).disconnect();
+        analysersRef.current.get(id).disconnect();
+      }
+
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.5;
+
+      source.connect(analyser); // We don't connect to destination to avoid feedback loop for local
+
+      sourceNodesRef.current.set(id, source);
+      analysersRef.current.set(id, analyser);
+
+      if (!animationFrameRef.current) {
+        detectActiveSpeakers();
+      }
+    } catch (err) {
+      console.error("Error attaching audio analyzer:", err);
+    }
+  };
+
+  const detectActiveSpeakers = () => {
+    if (!analysersRef.current.size) {
+      animationFrameRef.current = requestAnimationFrame(detectActiveSpeakers);
+      return;
+    }
+
+    const speakingThreshold = 15; // Threshold for "speaking" (0-255)
+    const currentSpeakers = new Set();
+    const dataArray = new Uint8Array(128); // Half of fftSize
+
+    analysersRef.current.forEach((analyser, id) => {
+      analyser.getByteFrequencyData(dataArray);
+
+      // Calculate average volume
+      const sum = dataArray.reduce((a, b) => a + b, 0);
+      const average = sum / dataArray.length;
+
+      if (average > speakingThreshold) {
+        currentSpeakers.add(id);
+      }
+    });
+
+    // Only update state if changed to avoid re-renders
+    setActiveSpeakers((prev) => {
+      // Simple set equality check
+      if (prev.size !== currentSpeakers.size) return currentSpeakers;
+      for (let a of prev) if (!currentSpeakers.has(a)) return currentSpeakers;
+      return prev;
+    });
+
+    animationFrameRef.current = requestAnimationFrame(detectActiveSpeakers);
   };
 
   // --- WebRTC Helper Functions ---
@@ -405,6 +508,25 @@ export const CallProvider = ({ children }) => {
     };
   }, [socket, callState, call]); // 'call' dep needed for isGroup check inside?
 
+  // --- Audio Analysis Effects ---
+  useEffect(() => {
+    if (callState === "connected" || callState === "outgoing") {
+      if (localStream) {
+        attachStreamAnalyzer(localStream, "local");
+      }
+
+      remoteStreams.forEach((stream, id) => {
+        attachStreamAnalyzer(stream, id);
+      });
+    }
+
+    return () => {
+      // We generally cleanup on endCallCleanup, but here we can handle
+      // specific stream removals if we want more granular control.
+      // For now, rely on endCallCleanup.
+    };
+  }, [localStream, remoteStreams, callState]);
+
   // --- Public Actions ---
 
   const startCall = async ({
@@ -723,6 +845,7 @@ export const CallProvider = ({ children }) => {
     setCallState("idle");
     setIsMuted(false);
     setIsVideoEnabled(true);
+    cleanupAudioAnalysis();
   };
 
   return (
@@ -742,6 +865,7 @@ export const CallProvider = ({ children }) => {
         setIsMuted,
         isVideoEnabled,
         setIsVideoEnabled,
+        activeSpeakers,
       }}
     >
       {children}

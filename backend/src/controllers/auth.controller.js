@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import prisma from '../config/prisma.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
-import { OAuth2Client } from 'google-auth-library';
+
 import { sendVerificationEmail, sendPasswordResetOTP } from '../utils/email.js';
 import logger from '../utils/logger.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../config/messages.js';
@@ -15,7 +15,7 @@ import {
     sendUnauthorized
 } from '../utils/response.js';
 
-const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
+
 
 // Common select fields for user queries
 const USER_SELECT = {
@@ -166,54 +166,7 @@ export const login = async (req, res) => {
     }
 };
 
-export const googleLogin = async (req, res) => {
-    try {
-        const { credential, idToken } = req.body;
-        const token = credential || idToken;
 
-        if (!token) {
-            return sendError(res, { error: ERROR_MESSAGES.AUTH.NO_CREDENTIAL, statusCode: 400 });
-        }
-
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID
-        });
-
-        const payload = ticket.getPayload();
-        const email = payload.email;
-        const username = payload.name.replace(/\s+/g, '').toLowerCase();
-
-        let user = await prisma.user.findUnique({ where: { email } });
-        let isNewUser = false;
-
-        if (!user) {
-            isNewUser = true;
-            user = await prisma.user.create({
-                data: {
-                    username,
-                    email,
-                    passwordHash: '',
-                    isOnline: true,
-                    lastActiveAt: new Date()
-                },
-                select: USER_SELECT
-            });
-        }
-
-        const accessToken = signAccessToken({ userId: user.userId });
-        const refreshToken = signRefreshToken({ userId: user.userId });
-
-        // Only store refresh token in HTTP-only cookie for security
-        res.cookie('refreshToken', refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000));
-
-        // Return access token in response body to be stored in memory
-        return sendSuccess(res, { data: { user, isNewUser, accessToken } });
-    } catch (error) {
-        logger.logError(error, { action: 'googleLogin' });
-        return sendError(res, { error: ERROR_MESSAGES.AUTH.GOOGLE_AUTH_FAILED });
-    }
-};
 
 export const getMe = async (req, res) => {
     try {

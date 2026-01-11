@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, googleLogin, getMe, updateProfile, logout, refreshToken, forgotPassword, resetPassword, verifyEmail, resendVerification, verifyResetOTP } from '../controllers/auth.controller.js';
+import { register, login, getMe, updateProfile, logout, refreshToken, forgotPassword, resetPassword, verifyEmail, resendVerification, verifyResetOTP } from '../controllers/auth.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -47,7 +47,7 @@ const resendVerificationValidation = [
 // Routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
-router.post('/google', googleLogin);
+
 router.get('/me', authenticate, getMe);
 router.put('/profile', authenticate, updateProfileValidation, updateProfile);
 router.post('/logout', authenticate, logout);
