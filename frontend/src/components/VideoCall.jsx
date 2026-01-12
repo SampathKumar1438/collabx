@@ -179,7 +179,7 @@ function VideoCall() {
   if (count > 6) gridClass = "grid-cols-3 md:grid-cols-3";
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col animate-fade-in text-white">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col animate-fade-in text-white">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ function VideoCall() {
 
       {/* Main Grid Area */}
       <div
-        className={`flex-1 p-4 grid ${gridClass} gap-4 content-center overflow-y-auto`}
+        className={`flex-1 p-2 grid ${gridClass} gap-2 content-center overflow-y-auto`}
       >
         {tiles.map((tile) => (
           <VideoTile
@@ -207,42 +207,42 @@ function VideoCall() {
       </div>
 
       {/* Controls Bar */}
-      <div className="bg-black/80 backdrop-blur-lg p-6 flex justify-center items-center gap-6 z-10 border-t border-white/10">
+      <div className="bg-black/90 backdrop-blur-lg p-3 flex justify-center items-center gap-4 z-10 border-t border-white/10">
         <button
           onClick={toggleMute}
-          className={`p-4 rounded-full transition-all ${
+          className={`p-3 rounded-full transition-all ${
             isMuted
               ? "bg-white text-black"
               : "bg-white/10 text-white hover:bg-white/20"
           }`}
         >
           {isMuted ? (
-            <MicrophoneSlash size={24} weight="fill" />
+            <MicrophoneSlash size={20} weight="fill" />
           ) : (
-            <Microphone size={24} weight="fill" />
+            <Microphone size={20} weight="fill" />
           )}
         </button>
 
         <button
           onClick={endCall}
-          className="p-5 rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg hover:scale-105"
+          className="p-3 rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-lg hover:scale-105"
         >
-          <Phone size={28} weight="fill" className="rotate-[135deg]" />
+          <Phone size={24} weight="fill" className="rotate-[135deg]" />
         </button>
 
         {isVideoCall && (
           <button
             onClick={toggleVideo}
-            className={`p-4 rounded-full transition-all ${
+            className={`p-3 rounded-full transition-all ${
               !isVideoEnabled
                 ? "bg-white text-black"
                 : "bg-white/10 text-white hover:bg-white/20"
             }`}
           >
             {!isVideoEnabled ? (
-              <VideoCameraSlash size={24} weight="fill" />
+              <VideoCameraSlash size={20} weight="fill" />
             ) : (
-              <VideoCamera size={24} weight="fill" />
+              <VideoCamera size={20} weight="fill" />
             )}
           </button>
         )}

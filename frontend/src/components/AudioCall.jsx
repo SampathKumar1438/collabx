@@ -79,7 +79,7 @@ function AudioCall() {
   if (count > 6) gridClass = "grid-cols-3 md:grid-cols-3";
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center animate-fade-in text-white">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-fade-in text-white">
       {/* Animated background circles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
@@ -90,7 +90,7 @@ function AudioCall() {
       </div>
 
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/5 flex items-center gap-2">
             <div
@@ -111,7 +111,7 @@ function AudioCall() {
 
       {/* Grid Area */}
       <div
-        className={`p-6 w-full max-w-7xl grid ${gridClass} gap-6 content-center flex-1 z-10 overflow-auto`}
+        className={`p-4 w-full max-w-7xl grid ${gridClass} gap-4 content-center flex-1 z-10 overflow-auto`}
       >
         {tiles.map((tile) => {
           const isSpeaking = activeSpeakers.has(tile.id);
@@ -180,27 +180,27 @@ function AudioCall() {
       </div>
 
       {/* Controls */}
-      <div className="mb-8 flex items-center gap-6 z-20">
+      <div className="mb-4 flex items-center gap-4 z-20">
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className={`p-6 rounded-full transition-all shadow-xl backdrop-blur-md border ${
+          className={`p-4 rounded-full transition-all shadow-xl backdrop-blur-md border ${
             isMuted
               ? "bg-white text-black border-white"
               : "bg-black/40 text-white border-white/10 hover:bg-black/60"
           }`}
         >
           {isMuted ? (
-            <MicrophoneSlash size={32} weight="fill" />
+            <MicrophoneSlash size={24} weight="fill" />
           ) : (
-            <Microphone size={32} weight="fill" />
+            <Microphone size={24} weight="fill" />
           )}
         </button>
 
         <button
           onClick={endCall}
-          className="p-8 rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-2xl hover:scale-105 hover:shadow-red-500/30"
+          className="p-5 rounded-full bg-red-500 hover:bg-red-600 transition-all text-white shadow-2xl hover:scale-105 hover:shadow-red-500/30"
         >
-          <Phone size={40} weight="fill" className="rotate-[135deg]" />
+          <Phone size={28} weight="fill" className="rotate-[135deg]" />
         </button>
       </div>
     </div>
