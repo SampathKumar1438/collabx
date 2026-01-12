@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Phone, Microphone, MicrophoneSlash } from "@phosphor-icons/react";
 import Avatar from "./common/Avatar";
 import { useCall } from "../contexts/CallContext";
@@ -203,7 +203,32 @@ function AudioCall() {
           <Phone size={28} weight="fill" className="rotate-[135deg]" />
         </button>
       </div>
+      {/* Hidden Audio Elements for Remote Streams */}
+      {Array.from(remoteStreams).map(([id, stream]) => (
+        <AudioStream key={id} stream={stream} />
+      ))}
     </div>
+  );
+}
+
+// Helper component to handle stream attachment
+function AudioStream({ stream }) {
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (audioRef.current && stream) {
+      audioRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  return (
+    <audio
+      ref={audioRef}
+      autoPlay
+      playsInline
+      controls={false}
+      className="hidden"
+    />
   );
 }
 

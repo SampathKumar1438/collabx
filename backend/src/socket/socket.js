@@ -520,6 +520,16 @@ export function setupSocketHandlers(io) {
             createCallMessage(chatId, 'call', `${isVideo ? 'Video' : 'Voice'} Call declined`, { status: "declined", isVideo });
         });
 
+        socket.on('call:media-update', ({ chatId, type, enabled }) => {
+            socket.to(`chat:${chatId}`).emit('call:media-update', {
+                peerSocketId: socket.id,
+                userId: socket.userId,
+                type,
+                enabled,
+                chatId
+            });
+        });
+
         socket.on('call:end', ({ to, recipientId, chatId, duration, isVideo }) => {
             const enderId = socket.userId;
 

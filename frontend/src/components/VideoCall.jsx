@@ -39,12 +39,12 @@ const VideoTile = memo(({ tile, isSpeaking, isVideoCall }) => {
         } ${!tile.videoEnabled || !isVideoCall ? "opacity-0" : ""}`}
       />
 
-      {/* Avatar Fallback (Audio Only) */}
+      {/* Avatar Fallback (Camera Off) */}
       {(!tile.videoEnabled || !isVideoCall) && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-700">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
           <div
-            className={`w-24 h-24 rounded-full border-4 overflow-hidden mb-2 ${
-              isSpeaking ? "border-green-500 animate-pulse" : "border-gray-500"
+            className={`w-24 h-24 rounded-full border-4 overflow-hidden mb-3 ${
+              isSpeaking ? "border-green-500 animate-pulse" : "border-gray-600"
             }`}
           >
             <Avatar
@@ -53,6 +53,10 @@ const VideoTile = memo(({ tile, isSpeaking, isVideoCall }) => {
               size="custom"
               className="w-full h-full"
             />
+          </div>
+          <div className="flex items-center gap-2 text-white/50 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
+            <VideoCameraSlash size={16} />
+            <span className="text-xs font-medium">Camera Off</span>
           </div>
         </div>
       )}
@@ -94,39 +98,16 @@ function VideoCall() {
     call,
     callState,
     localStream,
-    // remoteStream, // Deprecated in component logic favor of remoteStreams map
     remoteStreams,
     participantInfo,
     endCall,
     isMuted,
-    setIsMuted,
     isVideoEnabled,
-    setIsVideoEnabled,
     activeSpeakers,
+    remoteMediaStates,
+    toggleVideo,
+    toggleAudio,
   } = useCall();
-
-  // No longer need refs here for single streams, as tiles handle themselves
-
-  const toggleMute = () => {
-    if (localStream) {
-      const newMutedState = !isMuted;
-      localStream.getAudioTracks().forEach((track) => {
-        track.enabled = !newMutedState;
-      });
-      setIsMuted(newMutedState);
-    }
-  };
-
-  // Helper to toggle video
-  const toggleVideo = () => {
-    if (localStream) {
-      const newVideoState = !isVideoEnabled;
-      localStream.getVideoTracks().forEach((track) => {
-        track.enabled = newVideoState;
-      });
-      setIsVideoEnabled(newVideoState);
-    }
-  };
 
   if (!call) return null;
 
@@ -160,12 +141,15 @@ function VideoCall() {
       };
     }
 
+    const mediaState = remoteMediaStates?.get(id);
+    const isRemoteVideoOn = mediaState ? mediaState.video : true;
+
     tiles.push({
       id: id,
       isLocal: false,
       name: info?.name || "User",
       stream: stream,
-      videoEnabled: true, // we assume true for remote unless we have signaling for it
+      videoEnabled: isRemoteVideoOn,
       avatar: info?.avatar,
     });
   });
@@ -209,7 +193,7 @@ function VideoCall() {
       {/* Controls Bar */}
       <div className="bg-black/90 backdrop-blur-lg p-3 flex justify-center items-center gap-4 z-10 border-t border-white/10">
         <button
-          onClick={toggleMute}
+          onClick={toggleAudio}
           className={`p-3 rounded-full transition-all ${
             isMuted
               ? "bg-white text-black"

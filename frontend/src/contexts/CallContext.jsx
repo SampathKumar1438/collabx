@@ -49,6 +49,8 @@ export const CallProvider = ({ children }) => {
   const sourceNodesRef = useRef(new Map()); // id -> MediaStreamSource
   const animationFrameRef = useRef(null);
   const [activeSpeakers, setActiveSpeakers] = useState(new Set());
+  // Map: socketId -> { video: boolean, audio: boolean }
+  const [remoteMediaStates, setRemoteMediaStates] = useState(new Map());
 
   const playRingtone = () => {
     try {
@@ -508,7 +510,22 @@ export const CallProvider = ({ children }) => {
     socket.on("call:busy", handleBusy);
     socket.on("call:offline", handleOffline);
 
+    // Handle media updates
+    const handleMediaUpdate = ({ peerSocketId, type, enabled }) => {
+      setRemoteMediaStates((prev) => {
+        const newMap = new Map(prev);
+        const currentState = newMap.get(peerSocketId) || {
+          video: true,
+          audio: true,
+        };
+        newMap.set(peerSocketId, { ...currentState, [type]: enabled });
+        return newMap;
+      });
+    };
+    socket.on("call:media-update", handleMediaUpdate);
+
     return () => {
+      socket.off("call:media-update", handleMediaUpdate);
       socket.off("call:incoming", handleIncomingCall);
       socket.off("call:peer-joined", handlePeerJoined);
       socket.off("call:offer", handleOffer);
@@ -542,6 +559,48 @@ export const CallProvider = ({ children }) => {
   }, [localStream, remoteStreams, callState]);
 
   // --- Public Actions ---
+
+  const toggleVideo = () => {
+    if (localStream) {
+      const newState = !isVideoEnabled;
+      // Toggle track
+      localStream.getVideoTracks().forEach((t) => (t.enabled = newState));
+      setIsVideoEnabled(newState);
+
+      // Signal
+      if (socket && call?.chatId) {
+        socket.emit("call:media-update", {
+          chatId: call.chatId,
+          type: "video",
+          enabled: newState,
+        });
+      }
+    }
+  };
+
+  const toggleAudio = () => {
+    if (localStream) {
+      const newState = !isMuted; // isMuted means DISABLED. So newState=true means Muted(Disabled).
+      // Wait, isMuted state logic: isMuted=true -> track.enabled=false.
+      // So if isMuted is false (Audio ON), we want to make it true (Audio OFF).
+      // track.enabled should be !newState.
+
+      // Let's rely on existing toggle logic but extract it?
+      // Existing logic was inside component. Let's pull it here.
+      const newMutedState = !isMuted;
+      localStream.getAudioTracks().forEach((t) => (t.enabled = !newMutedState));
+      setIsMuted(newMutedState);
+
+      // Signal (Audio "enabled" is !newMutedState)
+      if (socket && call?.chatId) {
+        socket.emit("call:media-update", {
+          chatId: call.chatId,
+          type: "audio",
+          enabled: !newMutedState,
+        });
+      }
+    }
+  };
 
   const startCall = async ({
     recipientId,
@@ -880,6 +939,9 @@ export const CallProvider = ({ children }) => {
         isVideoEnabled,
         setIsVideoEnabled,
         activeSpeakers,
+        remoteMediaStates,
+        toggleVideo,
+        toggleAudio,
       }}
     >
       {children}
