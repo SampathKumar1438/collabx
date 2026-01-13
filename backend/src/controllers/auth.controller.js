@@ -110,6 +110,13 @@ export const register = async (req, res) => {
             }
         }
 
+        const accessToken = signAccessToken({ userId: user.userId });
+        const refreshToken = signRefreshToken({ userId: user.userId });
+
+        // Store tokens in cookies
+        res.cookie('accessToken', accessToken, getCookieOptions(15 * 60 * 1000)); // 15 minutes
+        res.cookie('refreshToken', refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000)); // 7 days
+
         return sendCreated(res, {
             data: {
                 user: { ...user, emailVerificationToken: undefined }, // Don't send token back
@@ -155,11 +162,12 @@ export const login = async (req, res) => {
         const accessToken = signAccessToken({ userId: user.userId });
         const refreshToken = signRefreshToken({ userId: user.userId });
 
-        // Only store refresh token in HTTP-only cookie for security
-        res.cookie('refreshToken', refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000));
+        // Store tokens in HTTP-only cookies
+        res.cookie('accessToken', accessToken, getCookieOptions(15 * 60 * 1000)); // 15 minutes
+        res.cookie('refreshToken', refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000)); // 7 days
 
-        // Return access token in response body to be stored in memory
-        return sendSuccess(res, { data: { user: updatedUser, accessToken } });
+        // Return user data (tokens are in cookies)
+        return sendSuccess(res, { data: { user: updatedUser } });
     } catch (error) {
         logger.logError(error, { action: 'login' });
         return sendError(res, { error: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS });
@@ -225,7 +233,8 @@ export const updateProfile = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-    // Clear refresh token cookie (access token is in memory on client)
+    // Clear both cookies
+    res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     return sendSuccess(res, { message: SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS });
 };
@@ -241,8 +250,10 @@ export const refreshToken = (req, res) => {
         const payload = verifyRefreshToken(token);
         const newAccessToken = signAccessToken({ userId: payload.userId });
 
-        // Return new access token in response body to be stored in memory
-        return sendSuccess(res, { data: { accessToken: newAccessToken } });
+        // Store new access token in cookie
+        res.cookie('accessToken', newAccessToken, getCookieOptions(15 * 60 * 1000)); // 15 minutes
+
+        return sendSuccess(res, { message: "Token refreshed successfully" });
     } catch (err) {
         return sendUnauthorized(res, ERROR_MESSAGES.AUTH.INVALID_REFRESH_TOKEN);
     }
@@ -354,12 +365,12 @@ export const resetPassword = async (req, res) => {
         const accessToken = signAccessToken({ userId: user.userId });
         const refreshTokenVal = signRefreshToken({ userId: user.userId });
 
-        // Only store refresh token in HTTP-only cookie for security
+        // Store tokens in cookies
+        res.cookie('accessToken', accessToken, getCookieOptions(15 * 60 * 1000)); // 15 minutes
         res.cookie('refreshToken', refreshTokenVal, getCookieOptions(7 * 24 * 60 * 60 * 1000));
 
-        // Return access token in response body to be stored in memory
         return sendSuccess(res, {
-            data: { user: updatedUser, accessToken },
+            data: { user: updatedUser },
             message: SUCCESS_MESSAGES.PASSWORD.RESET_SUCCESS
         });
     } catch (error) {
@@ -409,12 +420,12 @@ export const verifyEmail = async (req, res) => {
         const accessToken = signAccessToken({ userId: user.userId });
         const refreshTokenVal = signRefreshToken({ userId: user.userId });
 
-        // Only store refresh token in HTTP-only cookie for security
+        // Store tokens in cookies
+        res.cookie('accessToken', accessToken, getCookieOptions(15 * 60 * 1000)); // 15 minutes
         res.cookie('refreshToken', refreshTokenVal, getCookieOptions(7 * 24 * 60 * 60 * 1000));
 
-        // Return access token in response body to be stored in memory
         return sendSuccess(res, {
-            data: { user: updatedUser, accessToken },
+            data: { user: updatedUser },
             message: SUCCESS_MESSAGES.VERIFICATION.EMAIL_VERIFIED
         });
     } catch (error) {

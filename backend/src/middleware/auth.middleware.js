@@ -6,14 +6,8 @@ import logger from '../utils/logger.js';
 
 export const authenticate = async (req, res, next) => {
     try {
-        // Extract token from Authorization header (Bearer token)
-        const authHeader = req.headers.authorization || req.headers.Authorization;
-
-        if (!authHeader?.startsWith('Bearer ')) {
-            return sendUnauthorized(res, ERROR_MESSAGES.AUTH.TOKEN_MISSING);
-        }
-
-        const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        // Check for token in cookies
+        const token = req.cookies?.accessToken;
 
         if (!token) {
             return sendUnauthorized(res, ERROR_MESSAGES.AUTH.TOKEN_MISSING);
@@ -52,39 +46,35 @@ export const authenticate = async (req, res, next) => {
 
 export const optionalAuth = async (req, res, next) => {
     try {
-        // Extract token from Authorization header (Bearer token)
-        const authHeader = req.headers.authorization || req.headers.Authorization;
+        // Check for token in cookies
+        const token = req.cookies?.accessToken;
 
-        if (authHeader?.startsWith('Bearer ')) {
-            const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        if (token) {
+            try {
+                const payload = verifyAccessToken(token);
+                const user = await prisma.user.findUnique({
+                    where: { userId: payload.userId },
+                    select: {
+                        userId: true,
+                        username: true,
+                        email: true,
+                        profilePictureUrl: true,
+                        isOnline: true,
+                        lastActiveAt: true,
+                        createdAt: true
+                    },
+                });
 
-            if (token) {
-                try {
-                    const payload = verifyAccessToken(token);
-                    const user = await prisma.user.findUnique({
-                        where: { userId: payload.userId },
-                        select: {
-                            userId: true,
-                            username: true,
-                            email: true,
-                            profilePictureUrl: true,
-                            isOnline: true,
-                            lastActiveAt: true,
-                            createdAt: true
-                        },
-                    });
-
-                    if (user) {
-                        req.user = user;
-                    }
-                } catch (error) {
-                    logger.warn('Optional authentication failed:', error);
+                if (user) {
+                    req.user = user;
                 }
+            } catch (error) {
+                logger.warn('Optional authentication failed:', error);
             }
         }
-        next();
-    } catch (error) {
-        logger.error('Unexpected error in optional authentication:', error);
-        next();
     }
+        next();
+} catch (error) {
+    logger.error('Unexpected error in optional authentication:', error);
+    next();
 };

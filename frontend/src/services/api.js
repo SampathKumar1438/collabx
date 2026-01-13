@@ -2,20 +2,8 @@ import axios from 'axios';
 import config from '../config';
 
 // ============================================================================
-// IN-MEMORY TOKEN STORAGE (Secure - not visible in browser storage)
+// AXIOS INSTANCE CONFIGURATION
 // ============================================================================
-let accessToken = null;
-
-// Token management functions
-export const tokenManager = {
-    getToken: () => accessToken,
-    setToken: (token) => {
-        accessToken = token;
-    },
-    clearToken: () => {
-        accessToken = null;
-    }
-};
 
 // ============================================================================
 // AXIOS INSTANCE CONFIGURATION
@@ -30,14 +18,11 @@ const api = axios.create({
 });
 
 // ============================================================================
-// REQUEST INTERCEPTOR - Attach Access Token to Authorization Header
+// REQUEST INTERCEPTOR
 // ============================================================================
 api.interceptors.request.use(
     (config) => {
-        const token = tokenManager.getToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+        // Access token is now sent via HttpOnly cookie automatically by browser
         return config;
     },
     (error) => {
@@ -64,10 +49,6 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.response.use(
     (response) => {
-        // If response contains a new access token, store it
-        if (response.data?.data?.accessToken) {
-            tokenManager.setToken(response.data.data.accessToken);
-        }
         return response;
     },
     async (error) => {
@@ -107,24 +88,14 @@ api.interceptors.response.use(
 
             try {
                 // Try to refresh the token using refresh token from cookie
-                const response = await api.post('/auth/refresh-token');
+                // This will set a new accessToken cookie
+                await api.post('/auth/refresh-token');
 
-                // Get new access token from response
-                const newAccessToken = response.data?.data?.accessToken;
-
-                if (newAccessToken) {
-                    tokenManager.setToken(newAccessToken);
-                    processQueue(null, newAccessToken);
-
-                    // Retry the original request with new token
-                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return api(originalRequest);
-                } else {
-                    throw new Error('No access token in refresh response');
-                }
+                // Retry the original request (browser will attach new cookie)
+                processQueue(null);
+                return api(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                tokenManager.clearToken();
 
                 // Only redirect if we're not already on login/auth pages
                 if (!window.location.pathname.includes('/login') &&

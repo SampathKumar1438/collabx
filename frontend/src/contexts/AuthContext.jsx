@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import api, { tokenManager } from "../services/api";
+import api from "../services/api";
 import toast from "react-hot-toast";
 
 const AuthContext = createContext(null);
@@ -22,9 +22,8 @@ export function AuthProvider({ children }) {
       try {
         console.log("Proactively refreshing access token...");
         const response = await api.post("/auth/refresh-token");
-        if (response.data?.data?.accessToken) {
-          console.log("Access token refreshed successfully");
-          // Token is automatically stored by response interceptor
+        if (response.data?.success) {
+          console.log("Access token cookie refreshed successfully");
         }
       } catch (error) {
         console.error("Proactive token refresh failed:", error);
@@ -41,9 +40,9 @@ export function AuthProvider({ children }) {
       // This ensures we have a valid access token in memory
       try {
         const refreshResponse = await api.post("/auth/refresh-token");
-        if (refreshResponse.data?.data?.accessToken) {
-          // Token is automatically stored by the response interceptor
-          // Now fetch user data with the new access token
+        if (refreshResponse.data?.success) {
+          // Access token cookie has been set
+          // Now fetch user data
           const userResponse = await api.get("/auth/me");
           if (userResponse.data.success && userResponse.data.data) {
             setUser(userResponse.data.data);
@@ -60,7 +59,6 @@ export function AuthProvider({ children }) {
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem("userId");
-        tokenManager.clearToken();
       }
     } catch (error) {
       // Silently fail - user is not authenticated
@@ -68,7 +66,6 @@ export function AuthProvider({ children }) {
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem("userId");
-      tokenManager.clearToken();
     } finally {
       setLoading(false);
     }
@@ -78,8 +75,8 @@ export function AuthProvider({ children }) {
     try {
       const response = await api.post("/auth/login", { email, password });
       if (response.data.success && response.data.data) {
-        // Store access token in memory (handled by api.js interceptor)
-        // Token is automatically stored by response interceptor
+        // Token is automatically stored in HttpOnly cookie by server
+        // response.data.data.accessToken is no longer sent or needed here
         setUser(response.data.data.user);
         setIsAuthenticated(true);
         if (response.data.data.user.userId) {
@@ -126,7 +123,7 @@ export function AuthProvider({ children }) {
         otp,
       });
       if (response.data.success && response.data.data) {
-        // Access token automatically stored by response interceptor
+        // Access token automatically stored in cookie
         setUser(response.data.data.user);
         setIsAuthenticated(true);
         if (response.data.data.user.userId) {
@@ -163,8 +160,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await api.post("/auth/logout");
-      // Clear access token from memory
-      tokenManager.clearToken();
+      // Access token cookie is cleared by server
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem("userId");
@@ -172,7 +168,6 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error);
       // Clear state anyway
-      tokenManager.clearToken();
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem("userId");
@@ -250,8 +245,8 @@ export function AuthProvider({ children }) {
         newPassword,
       });
       if (response.data.success) {
-        // User is automatically logged in after password reset
-        // Access token automatically stored by response interceptor
+        // User is automatically logged in after password reset (cookies set)
+        // Access token automatically stored in cookie
         setUser(response.data.data.user);
         setIsAuthenticated(true);
         toast.success(response.data.message);

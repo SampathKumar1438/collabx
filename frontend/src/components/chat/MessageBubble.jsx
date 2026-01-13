@@ -544,7 +544,7 @@ function MessageBubble({
                 title={message.status || "sent"}
               >
                 {message.status === "read" ? (
-                  <Checks size={14} weight="bold" className="text-primary" />
+                  <Checks size={14} weight="bold" className="text-primary dark:text-white" />
                 ) : message.status === "delivered" ? (
                   <Checks
                     size={14}

@@ -1,69 +1,94 @@
-# FullStack Real-time Chat Application
+# CollabX - Real-time Collaboration & Chat Platform
 
-## Overview
+**CollabX** is a powerful, full-stack real-time messaging and collaboration application designed for seamless communication. Built with a modern tech stack, it combines robust chat functionality with rich media sharing, interactive polls, and audio/video calling capabilities, all wrapped in a sleek, glassmorphic user interface.
 
-This is a full-stack real-time chat application built with a modern tech stack. It features real-time messaging, file sharing (minio), authentication (including Google OAuth), and a responsive glassmorphic UI.
+## 🚀 Features
 
-## Features
+### 💬 Advanced Messaging
 
-- **Real-time Messaging**: Instant one-on-one and group chats powered by Socket.IO.
-- **Authentication**: Secure JWT authentication and Google OAuth integration.
-- **File Sharing**: Upload and share files (images, documents) using MinIO object storage.
-- **Rich UI/UX**: Modern glassmorphic design, dark mode support, and smooth animations using Framer Motion.
-- **Database**: Robust data management with PostgreSQL and Prisma ORM.
-- **Security**: Implements best practices with Helmet, CORS, and data validation.
+- **Real-time Chat**: Instant delivery for 1-on-1 and Group chats powered by **Socket.IO**.
+- **Message Status**: Visual indicators for Sent, Delivered, and Read receipts.
+- **Rich Media**: Share images and documents securely via **MinIO** object storage.
+- **Interactive Elements**:
+  - Typing indicators to see when others are replying.
+  - Live online/offline user status.
+  - Emoji picker integration (`emoji-mart`) for expressive conversations.
 
-## Tech Stack
+### 📞 Communication & Collaboration
+
+- **Audio & Video Calls**: High-quality real-time calls using **WebRTC**.
+- **Interactive Polls**: Create and vote on polls within chat groups with real-time result updates.
+- **Group Management**: Create groups, manage members, and customize group profiles.
+
+### 🔐 Security & Authentication
+
+- **Secure Access**: JWT-based authentication for stateless, secure API access.
+- **Profile Security**: Password reset and update functionality via Email (Postmark/Resend).
+
+### 🎨 Modern UI/UX
+
+- **Glassmorphism Design**: beautiful, translucent UI elements using **TailwindCSS**.
+- **Fluid Animations**: Smooth transitions and interaction effects with **Framer Motion**.
+- **Responsiveness**: Fully responsive layout optimized for all device sizes.
+- **Themes**: Native support for Light and Dark modes.
+- **Image Tools**: Built-in image cropping and adjustment (`react-easy-crop`) for profile and group photos.
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
 
-- **Framework**: React (Vite)
-- **Styling**: TailwindCSS, Framer Motion
-- **Icons**: Phosphor Icons
-- **State/Network**: Axios, Socket.IO Client, React Query (implied or standard)
-- **Routing**: React Router DOM
+- **Framework**: [React](https://react.dev/) (v18) via [Vite](https://vitejs.dev/)
+- **Styling**: [TailwindCSS](https://tailwindcss.com/) & [PostCSS](https://postcss.org/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **State & Networking**: [Axios](https://axios-http.com/), [Socket.IO Client](https://socket.io/)
+- **Routing**: [React Router](https://reactrouter.com/)
+- **Utilities**: `date-fns` (dates), `phosphor-icons` (icons), `react-hot-toast` (notifications)
 
 ### Backend
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: PostgreSQL (via Prisma ORM & Sequelize)
-- **Object Storage**: MinIO
-- **Real-time**: Socket.IO
-- **Validation**: Express Validator
-- **Logging**: Winston
+- **Runtime**: [Node.js](https://nodejs.org/) & [Express.js](https://expressjs.com/)
+- **Real-time Engine**: [Socket.IO](https://socket.io/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/)
+- **ORM**: [Prisma](https://www.prisma.io/) (Primary)
+- **Storage**: [MinIO](https://min.io/) (S3-compatible object storage)
+- **Security**: `helmet`, `cors`, `bcryptjs`, `jsonwebtoken`
+- **Email**: `postmark`, `nodemailer`
 
-## Prerequisites
+---
 
-- Node.js (v18 or higher recommended)
-- PostgreSQL (v14 or higher) - _Must be installed manually_
-- Docker (for MinIO object storage only)
-- npm or yarn
+## 📋 Prerequisites
 
-## Setup & Installation
+Before running the project, ensure you have the following installed:
+
+- **Node.js** (v18+ recommended)
+- **npm** or **yarn**
+- **PostgreSQL** (v14+)
+- **Docker** (required for running MinIO locally)
+
+---
+
+## ⚡ Setup & Installation
 
 ### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
-cd FullStack
+cd collabx
 ```
 
-### 2. Database Setup (Manual PostgreSQL)
+### 2. Database Setup
 
-Since you are not using Docker for the database, you must set it up manually:
+Ensure your local PostgreSQL service is running and create a database:
 
-1.  **Install PostgreSQL**: Download and install it from [postgresql.org](https://www.postgresql.org/download/).
-2.  **Start the Service**: Ensure the PostgreSQL service is running on your machine.
-3.  **Create a Database**: Open `psql` or pgAdmin and create a database (e.g., `fullstack_chat`).
-    ```sql
-    CREATE DATABASE fullstack_chat;
-    ```
-4.  **Check Credentials**: Note down your PostgreSQL username (default: `postgres`) and password.
+```sql
+CREATE DATABASE fullstack_chat;
+```
 
-### 3. Object Storage Setup (MinIO via Docker)
+### 3. Object Storage (MinIO)
 
-Use Docker to run the MinIO server:
+Run MinIO using Docker:
 
 ```bash
 docker run -d \
@@ -75,28 +100,29 @@ docker run -d \
   minio/minio server /data --console-address ":9001"
 ```
 
-- **Console**: http://localhost:9001 (User: `minioadmin`, Pass: `minioadmin`)
-- **API Port**: 9000
+- **Console**: [http://localhost:9001](http://localhost:9001)
+- **Credentials**: `minioadmin` / `minioadmin`
 
-### 4. Backend Setup
+### 4. Backend Configuration
 
-Navigate to the backend directory and install dependencies:
+Navigate to the `backend` folder and setup environment variables:
 
 ```bash
 cd backend
 npm install
+cp .env.example .env  # or create .env manually
 ```
 
-Create a `.env` file in the `backend` directory:
+**Recommended `.env` details**:
 
 ```env
 PORT=5000
 NODE_ENV=development
 DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/fullstack_chat"
-JWT_SECRET="your_jwt_secret_key_here"
+JWT_SECRET="your_secure_jwt_secret"
 CLIENT_URL="http://localhost:5173"
 
-# MinIO Configuration
+# MinIO
 MINIO_ENDPOINT="localhost"
 MINIO_PORT=9000
 MINIO_USE_SSL=false
@@ -104,53 +130,57 @@ MINIO_ACCESS_KEY="minioadmin"
 MINIO_SECRET_KEY="minioadmin"
 MINIO_BUCKET="fullstack-files"
 
-# Google Auth (Optional)
-GOOGLE_CLIENT_ID="your_google_client_id"
+# Email & Auth (Optional for local dev)
+POSTMARK_SERVER_TOKEN="..."
 ```
 
-Run Database Migrations:
+Run migrations and start server:
 
 ```bash
 npx prisma generate
 npx prisma migrate dev
-```
-
-Start the Backend Server:
-
-```bash
 npm run dev
 ```
 
-### 5. Frontend Setup
+### 5. Frontend Configuration
 
-Navigate to the frontend directory and install dependencies:
+Navigate to the `frontend` folder:
 
 ```bash
 cd ../frontend
 npm install
 ```
 
-Create a `.env` file in the `frontend` directory:
+Create `/frontend/.env`:
 
 ```env
 VITE_API_URL="http://localhost:5000/api"
-VITE_GOOGLE_CLIENT_ID="your_google_client_id.apps.googleusercontent.com"
-VITE_APP_NAME="FullStack Chat"
+VITE_APP_NAME="CollabX"
 ```
 
-Start the Frontend Development Server:
+Start the frontend:
 
 ```bash
 npm run dev
 ```
 
-## Running the Project
+---
 
-Once both backend and frontend servers are running, access the application at `http://localhost:5173` (or the port shown in your terminal).
+## 🔗 API Documentation
 
-## API Documentation
+CollabX uses a hybrid approach with REST and WebSockets.
 
-The backend provides a RESTful API along with WebSocket events.
+- **REST API** (`/api/v1`):
 
-- **REST API**: Handles auth, user management, and file uploads.
-- **Socket.IO**: Handles real-time events like `join_room`, `send_message`, `receive_message`.
+  - `/auth`: Login, Register, Refresh Token
+  - `/user`: Profile management, contact updates.
+  - `/chat`: Conversation management (Inbox, Groups).
+  - `/messages`: Message history and retrieval.
+  - `/polls`: Poll creation and voting.
+
+- **WebSocket Events**:
+  - `connection`: Authenticate handshake.
+  - `start_conversation`: Initiate private chats.
+  - `new_message`: Real-time message payload.
+  - `typing`: Indicators for user activity.
+  - `call_user` / `call_accepted`: WebRTC signaling.

@@ -474,7 +474,7 @@ export const CallProvider = ({ children }) => {
       closePeerConnection(peerSocketId);
     };
 
-    const handleCallEnded = ({ enderId }) => {
+    const handleCallEnded = () => {
       // Ideally trigger "left" for that peer.
       // If 1-to-1, end all.
       // If group, maybe keep alive?
@@ -683,14 +683,6 @@ export const CallProvider = ({ children }) => {
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
         // 1. Queue candidates until we know who to send to (or re-map default)
-        // actually for now we can just store them and emit later,
-        // OR rely on the fact we don't have socketId yet.
-        // We will store them in a temporary queue on the PC itself or a ref?
-        // Let's use a simple array on the component to hold "early candidates for default-1-1"
-        // But better: simply let the 'onicecandidate' fire, and if we don't have a recipient socket ID,
-        // we can't emit.
-        // BUT wait, we need to send them eventually.
-        // Let's attach them to the pc object temporarily?
         pc.queuedCandidates = [];
 
         pc.onicecandidate = (event) => {
