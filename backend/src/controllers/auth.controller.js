@@ -32,12 +32,18 @@ const USER_SELECT = {
 };
 
 // Cookie options helper - use secure cookies in production (HTTPS)
-const getCookieOptions = (maxAge) => ({
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-site cookies requires secure
-    maxAge
-});
+// Cookie options helper - use secure cookies in production (HTTPS)
+const getCookieOptions = (maxAge) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+        httpOnly: true,
+        // Secure is REQUIRED for SameSite=None
+        secure: isProduction,
+        // SameSite=None is required for cross-site cookies (frontend on different domain than backend)
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge
+    };
+};
 
 // Helper to generate 6-digit OTP
 const generateOTP = () => {
