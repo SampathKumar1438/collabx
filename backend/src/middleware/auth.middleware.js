@@ -6,7 +6,6 @@ import logger from '../utils/logger.js';
 
 export const authenticate = async (req, res, next) => {
     try {
-        // Check for token in cookies
         const token = req.cookies?.accessToken;
 
         if (!token) {
@@ -15,6 +14,7 @@ export const authenticate = async (req, res, next) => {
 
         try {
             const payload = verifyAccessToken(token);
+
             const user = await prisma.user.findUnique({
                 where: { userId: payload.userId },
                 select: {
@@ -24,7 +24,7 @@ export const authenticate = async (req, res, next) => {
                     profilePictureUrl: true,
                     isOnline: true,
                     lastActiveAt: true,
-                    createdAt: true
+                    createdAt: true,
                 },
             });
 
@@ -46,12 +46,12 @@ export const authenticate = async (req, res, next) => {
 
 export const optionalAuth = async (req, res, next) => {
     try {
-        // Check for token in cookies
         const token = req.cookies?.accessToken;
 
         if (token) {
             try {
                 const payload = verifyAccessToken(token);
+
                 const user = await prisma.user.findUnique({
                     where: { userId: payload.userId },
                     select: {
@@ -61,7 +61,7 @@ export const optionalAuth = async (req, res, next) => {
                         profilePictureUrl: true,
                         isOnline: true,
                         lastActiveAt: true,
-                        createdAt: true
+                        createdAt: true,
                     },
                 });
 
@@ -72,9 +72,10 @@ export const optionalAuth = async (req, res, next) => {
                 logger.warn('Optional authentication failed:', error);
             }
         }
-    }
+
         next();
-} catch (error) {
-    logger.error('Unexpected error in optional authentication:', error);
-    next();
+    } catch (error) {
+        logger.error('Unexpected error in optional authentication:', error);
+        next();
+    }
 };

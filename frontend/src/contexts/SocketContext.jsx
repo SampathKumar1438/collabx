@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
-import { tokenManager } from "../services/api";
 
 const SocketContext = createContext(null);
 
@@ -33,9 +32,7 @@ export const SocketProvider = ({ children }) => {
 
     const newSocket = io(SOCKET_URL, {
       withCredentials: true,
-      auth: {
-        token: tokenManager.getToken(), // Explicitly pass the token
-      },
+      // Token is sent automatically via HttpOnly cookie
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
