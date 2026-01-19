@@ -32,16 +32,17 @@ const USER_SELECT = {
 };
 
 // Cookie options helper - use secure cookies in production (HTTPS)
-// Cookie options helper - use secure cookies in production (HTTPS)
 const getCookieOptions = (maxAge) => {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction =
+        process.env.NODE_ENV === 'production' ||
+        process.env.RENDER === 'true';
+
     return {
         httpOnly: true,
-        // Secure is REQUIRED for SameSite=None
-        secure: isProduction,
-        // SameSite=None is required for cross-site cookies (frontend on different domain than backend)
+        secure: isProduction,              // HTTPS only in prod
         sameSite: isProduction ? 'none' : 'lax',
-        maxAge
+        maxAge,
+        path: '/',                         // REQUIRED for consistency
     };
 };
 
@@ -239,11 +240,14 @@ export const updateProfile = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-    // Clear both cookies
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
-    return sendSuccess(res, { message: SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS });
+    res.clearCookie('accessToken', getCookieOptions(0));
+    res.clearCookie('refreshToken', getCookieOptions(0));
+
+    return sendSuccess(res, {
+        message: SUCCESS_MESSAGES.AUTH.LOGOUT_SUCCESS
+    });
 };
+
 
 export const refreshToken = (req, res) => {
     const { refreshToken: token } = req.cookies;
@@ -293,7 +297,19 @@ export const forgotPassword = async (req, res) => {
             },
         });
 
-        await sendPasswordResetOTP(email, otp);
+        try {
+            await sendPasswordResetOTP(email, otp);
+        } catch (emailError) {
+            logger.warn('Failed to send reset email', {
+                email,
+                error: emailError.message
+            });
+
+            if (process.env.NODE_ENV !== 'production') {
+                logger.debug(`DEV ONLY: Reset OTP for ${email} is ${otp}`);
+            }
+        }
+
 
         return sendSuccess(res, { message: SUCCESS_MESSAGES.PASSWORD.RESET_EMAIL_SENT });
     } catch (error) {
